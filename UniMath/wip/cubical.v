@@ -40,3 +40,13 @@ Proof.
     now induction (h l).
 Defined.
 
+Definition cube_category : category.
+Proof.
+  exists cube_precategory.
+  intros I J.
+  apply funspace_isaset.
+  apply isfinite_isaset.
+  apply isfinitecoprod.
+  - exact (pr2 I).
+  - apply isfinitestn.
+Defined.
