@@ -6,17 +6,19 @@ Require Import UniMath.Combinatorics.FiniteSets.
 Require Import UniMath.MoreFoundations.Propositions.
 Require Import UniMath.CategoryTheory.limits.binproducts.
 
-(* Construction oc cartesian cube category using nat as object set *)
+Open Scope stn.
+
+(* Construction of cartesian cube category using nat as object set *)
 
 Definition cube_precategory_ob_mor : precategory_ob_mor :=
-  make_precategory_ob_mor nat (λ (m n : nat), (stnset n) → (stnset m ⨿ stnset 2)).
+  make_precategory_ob_mor nat (λ (m n : nat), (stn n) → (stn m ⨿ stn 2)).
 
 Definition cube_precategory_data : precategory_data.
 Proof.
   exists cube_precategory_ob_mor.
   split.
   - intro n.
-    exact (λ (i : stnset n), inl i).
+    exact (λ (i : stn n), inl i).
   - intros l m n f g i.
     induction (g i).
     + exact (f a).
@@ -50,15 +52,26 @@ Proof.
   apply isfinitecoprod; apply isfinitestn.
 Defined.
 
-Open Scope stn.
+Lemma natlth_to_coprod (m n i : nat) : i < m + n → (i < m) ⨿ (i - m < n).
+Proof.
+  intro p.
+  induction (natlthorgeh i m) as [q1 | q2].
+  - exact (inl q1).
+  - set (p' := (natlehlthtrans m i (m + n)) q2 p).
+    set (q3 := natlthandminusl i (m + n) m p p').
+    rewrite (natpluscomm m n) in q3.
+    rewrite (plusminusnmm n m) in q3.
+    exact (inr q3).
+Defined.
 
-Definition combined_fun {X : UU} (m n : nat) (f : stnset m → X) (g : stnset n → X) : stnset (m + n) → X.
+Definition combined_fun {X : UU} (m n : nat) (f : stn m → X) (g : stn n → X) : stn (m + n) → X.
 Proof.
   intro a.
   set (i := pr1 a).
-  set (b := natgtb m i).
-  apply bool_rect.
-  - set (make_stn m i b).
+  induction (natlth_to_coprod m n i (pr2 a)) as [H1 | H2].
+  - exact (f (make_stn m i H1)).
+  - exact (g (make_stn n (i - m) H2)).
+Defined.
 
 Definition cube_category_binproduct : BinProducts cube_category.
 Proof.
@@ -73,8 +86,5 @@ Proof.
       unfold iscontr.
       use tpair.
       * use tpair.
-        -- intro i.
-           set (j := pr1 i).
-           set (b := natgtb m j).
-           Check ● j.
-           exact (if b then f (j ,, b) else g (n j )).
+        -- exact (combined_fun m n f g).
+        --
