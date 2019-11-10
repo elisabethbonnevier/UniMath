@@ -11,16 +11,16 @@ Open Scope stn.
 (* Construction of cartesian cube category using nat as object set *)
 
 Definition cube_precategory_ob_mor : precategory_ob_mor :=
-  make_precategory_ob_mor nat (λ (m n : nat), (stn n) → (stn m ⨿ stn 2)).
+  make_precategory_ob_mor nat (λ (m n : nat), ⟦n⟧ → ⟦m⟧ ⨿ ⟦2⟧).
 
 Definition cube_precategory_data : precategory_data.
 Proof.
   exists cube_precategory_ob_mor.
   split.
   - intro n.
-    exact (λ (i : stn n), inl i).
+    exact (λ (i : ⟦n⟧), inl i).
   - intros l m n f g i.
-    induction (g i).
+    induction (g i) as [a | b].
     + exact (f a).
     + exact (inr b).
 Defined.
@@ -52,25 +52,13 @@ Proof.
   apply isfinitecoprod; apply isfinitestn.
 Defined.
 
-Lemma natlth_to_coprod (m n i : nat) : i < m + n → (i < m) ⨿ (i - m < n).
-Proof.
-  intro p.
-  induction (natlthorgeh i m) as [q1 | q2].
-  - exact (inl q1).
-  - set (p' := (natlehlthtrans m i (m + n)) q2 p).
-    set (q3 := natlthandminusl i (m + n) m p p').
-    rewrite (natpluscomm m n) in q3.
-    rewrite (plusminusnmm n m) in q3.
-    exact (inr q3).
-Defined.
-
-Definition combined_fun {X : UU} (m n : nat) (f : stn m → X) (g : stn n → X) : stn (m + n) → X.
+Definition combined_fun {X : UU} (m n : nat) (f : ⟦m⟧ → X) (g : ⟦n⟧ → X) : ⟦m + n⟧ → X.
 Proof.
   intro a.
-  set (i := pr1 a).
-  induction (natlth_to_coprod m n i (pr2 a)) as [H1 | H2].
-  - exact (f (make_stn m i H1)).
-  - exact (g (make_stn n (i - m) H2)).
+  set (x := weqfromcoprodofstn_invmap m n a).
+  induction x as [x1 | x2].
+  - exact (f x1).
+  - exact (g x2).
 Defined.
 
 Definition cube_category_binproduct : BinProducts cube_category.
@@ -78,8 +66,8 @@ Proof.
   intros m n.
   use make_BinProduct.
   - exact (m + n).
-  - exact (λ (i : stnset m), inl ((stn_left m n) i)).
-  - exact (λ (i : stnset n), inl ((stn_right m n) i)).
+  - exact (λ i : ⟦m⟧, inl (stn_left m n i)).
+  - exact (λ i : ⟦n⟧, inl (stn_right m n i)).
   - use make_isBinProduct.
     + exact (pr2 cube_category).
     + intros l f g.
@@ -87,4 +75,7 @@ Proof.
       use tpair.
       * use tpair.
         -- exact (combined_fun m n f g).
-        --
+        -- cbn.
+           split.
+           ++ apply funextfun.
+              intro i.
