@@ -52,15 +52,6 @@ Proof.
   apply isfinitecoprod; apply isfinitestn.
 Defined.
 
-Definition combined_fun {X : UU} (m n : nat) (f : ⟦m⟧ → X) (g : ⟦n⟧ → X) : ⟦m + n⟧ → X.
-Proof.
-  intro a.
-  set (x := weqfromcoprodofstn_invmap m n a).
-  induction x as [x1 | x2].
-  - exact (f x1).
-  - exact (g x2).
-Defined.
-
 Definition cube_category_binproduct : BinProducts cube_category.
 Proof.
   intros m n.
@@ -74,8 +65,16 @@ Proof.
       unfold iscontr.
       use tpair.
       * use tpair.
-        -- exact (combined_fun m n f g).
+        -- intro a.
+           induction (weqfromcoprodofstn_invmap m n a) as [ x1 | x2 ].
+           ++ exact (f x1).
+           ++ exact (g x2).
         -- cbn.
            split.
            ++ apply funextfun.
               intro i.
+              unfold stn_left.
+              unfold combined_fun.
+              assert (p : pr1 (stn_left m n i) = pr1 i).
+              rewrite (stn_left_compute m n i).
+              apply idpath.
