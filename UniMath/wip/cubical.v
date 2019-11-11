@@ -52,6 +52,18 @@ Proof.
   apply isfinitecoprod; apply isfinitestn.
 Defined.
 
+Lemma stn_left_to_coprod (m n : nat) (i : ⟦ m ⟧) :
+  weqfromcoprodofstn_invmap m n (stn_left m n i) = inl i.
+Proof.
+  now rewrite <- weqfromcoprodofstn_eq1.
+Defined.
+
+Lemma stn_right_to_coprod (m n : nat) (i : ⟦ n ⟧) :
+  weqfromcoprodofstn_invmap m n (stn_right m n i) = inr i.
+Proof.
+  now rewrite <- weqfromcoprodofstn_eq1.
+Defined.
+
 Definition cube_category_binproduct : BinProducts cube_category.
 Proof.
   intros m n.
@@ -60,21 +72,24 @@ Proof.
   - exact (λ i : ⟦m⟧, inl (stn_left m n i)).
   - exact (λ i : ⟦n⟧, inl (stn_right m n i)).
   - use make_isBinProduct.
-    + exact (pr2 cube_category).
+    + apply homset_property.
     + intros l f g.
-      unfold iscontr.
-      use tpair.
-      * use tpair.
-        -- intro a.
-           induction (weqfromcoprodofstn_invmap m n a) as [ x1 | x2 ].
-           ++ exact (f x1).
-           ++ exact (g x2).
-        -- cbn.
-           split.
-           ++ apply funextfun.
-              intro i.
-              unfold stn_left.
-              unfold combined_fun.
-              assert (p : pr1 (stn_left m n i) = pr1 i).
-              rewrite (stn_left_compute m n i).
-              apply idpath.
+      use unique_exists.
+      * intro i.
+        induction (weqfromcoprodofstn_invmap m n i) as [ x1 | x2 ].
+          -- exact (f x1).
+          -- exact (g x2).
+      * cbn.
+        split; apply funextfun; intro i.
+        -- now rewrite stn_left_to_coprod.
+        -- now rewrite stn_right_to_coprod.
+      * intro h.
+        now apply isapropdirprod; apply homset_property.
+      * intros h [H1 H2].
+        apply funextfun.
+        intros i.
+        rewrite <- (maponpaths h (weqfromcoprodofstn_eq2 m n i)).
+        induction (weqfromcoprodofstn_invmap m n i) as [x1 | x2].
+        -- now rewrite <- H1.
+        -- now rewrite <- H2.
+Defined.
