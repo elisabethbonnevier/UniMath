@@ -1,10 +1,18 @@
 (** Proof that the interval in cartesian cubical sets is tiny *)
 
 Require Import UniMath.CategoryTheory.Core.Categories.
+Require Import UniMath.CategoryTheory.Core.Functors.
 Require Import UniMath.Combinatorics.StandardFiniteSets.
 Require Import UniMath.Combinatorics.FiniteSets.
 Require Import UniMath.MoreFoundations.Propositions.
 Require Import UniMath.CategoryTheory.limits.binproducts.
+Require Import UniMath.CategoryTheory.limits.terminal.
+Require Import UniMath.CategoryTheory.exponentials.
+Require Import UniMath.CategoryTheory.Presheaf.
+Require Import UniMath.CategoryTheory.whiskering.
+Require Import UniMath.CategoryTheory.opp_precat.
+Require Import UniMath.CategoryTheory.FunctorCategory.
+Require Import UniMath.CategoryTheory.RightKanExtension.
 
 Open Scope stn.
 
@@ -52,6 +60,8 @@ Proof.
   apply isfinitecoprod; apply isfinitestn.
 Defined.
 
+(* Construction of binary product *)
+
 Lemma stn_left_to_coprod (m n : nat) (i : ⟦ m ⟧) :
   weqfromcoprodofstn_invmap m n (stn_left m n i) = inl i.
 Proof.
@@ -77,8 +87,8 @@ Proof.
       use unique_exists.
       * intro i.
         induction (weqfromcoprodofstn_invmap m n i) as [ x1 | x2 ].
-          -- exact (f x1).
-          -- exact (g x2).
+        -- exact (f x1).
+        -- exact (g x2).
       * cbn.
         split; apply funextfun; intro i.
         -- now rewrite stn_left_to_coprod.
@@ -92,4 +102,32 @@ Proof.
         induction (weqfromcoprodofstn_invmap m n i) as [x1 | x2].
         -- now rewrite <- H1.
         -- now rewrite <- H2.
+Defined.
+
+(* Construction of cubical set *)
+
+Lemma zero_is_terminal : Terminal cube_category.
+Proof.
+  use make_Terminal.
+  - exact 0.
+  - use make_isTerminal.
+    intro n.
+    apply iscontrfunfromempty2.
+    use weqstn0toempty.
+Defined.
+
+Definition prod_functor : functor cube_category cube_category
+  := constprod_functor2 cube_category_binproduct 0.
+
+Open Scope cat.
+
+Definition cubical_set : category := PreShv cube_category.
+
+Definition precomp_functor : functor cubical_set cubical_set.
+Proof.
+  use pre_composition_functor.
+  - apply has_homsets_opp.
+    apply homset_property.
+  - apply functor_opp.
+    exact prod_functor.
 Defined.
