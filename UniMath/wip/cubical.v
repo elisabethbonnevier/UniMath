@@ -13,6 +13,10 @@ Require Import UniMath.CategoryTheory.whiskering.
 Require Import UniMath.CategoryTheory.opp_precat.
 Require Import UniMath.CategoryTheory.FunctorCategory.
 Require Import UniMath.CategoryTheory.RightKanExtension.
+Require Import UniMath.CategoryTheory.Adjunctions.Core.
+Require Import UniMath.CategoryTheory.limits.graphs.limits.
+Require Import UniMath.CategoryTheory.categories.HSET.Core.
+Require Import UniMath.CategoryTheory.categories.HSET.Limits.
 
 Open Scope stn.
 
@@ -130,4 +134,10 @@ Proof.
     apply homset_property.
   - apply functor_opp.
     exact prod_functor.
+Defined.
+
+Lemma precomp_functor_has_right_adjoint : is_left_adjoint precomp_functor.
+Proof.
+  apply RightKanExtension_from_limits.
+  apply LimsHSET.
 Defined.
