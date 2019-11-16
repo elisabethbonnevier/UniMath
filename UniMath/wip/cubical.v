@@ -17,6 +17,10 @@ Require Import UniMath.CategoryTheory.Adjunctions.Core.
 Require Import UniMath.CategoryTheory.limits.graphs.limits.
 Require Import UniMath.CategoryTheory.categories.HSET.Core.
 Require Import UniMath.CategoryTheory.categories.HSET.Limits.
+Require Import UniMath.CategoryTheory.yoneda.
+Require Import UniMath.CategoryTheory.Core.Isos.
+Require Import UniMath.CategoryTheory.categories.HSET.Structures.
+Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
 
 Open Scope stn.
 
@@ -125,9 +129,9 @@ Definition prod_functor : functor cube_category cube_category
 
 Open Scope cat.
 
-Definition cubical_set : category := PreShv cube_category.
+Definition cubical_sets : category := PreShv cube_category.
 
-Definition precomp_functor : functor cubical_set cubical_set.
+Definition precomp_functor : functor cubical_sets cubical_sets.
 Proof.
   use pre_composition_functor.
   - apply has_homsets_opp.
@@ -140,4 +144,51 @@ Lemma precomp_functor_has_right_adjoint : is_left_adjoint precomp_functor.
 Proof.
   apply RightKanExtension_from_limits.
   apply LimsHSET.
+Defined.
+
+Definition I : cubical_sets := yoneda cube_category (pr2 cube_category) 0.
+
+Definition cubical_sets_binproduct : BinProducts cubical_sets.
+Proof.
+  use BinProducts_functor_precat.
+  exact BinProductsHSET.
+Defined.
+
+Definition cubical_sets_exponentials : Exponentials cubical_sets_binproduct.
+Proof.
+  use Exponentials_functor_HSET.
+  apply has_homsets_opp.
+  apply homset_property.
+Defined.
+
+Definition exp_I : functor cubical_sets cubical_sets.
+Proof.
+  exact (pr1 (cubical_sets_exponentials I)).
+Defined.
+
+(* UniMath.CategoryTheory.Core.NaturalTransformations.nat_iso definition of natural isomorphism between functors *)
+Search "bijection".
+Check precomp_functor.
+Print cubical_sets.
+About (ob cubical_sets).
+
+Lemma pointwise_iso_to_iso : (∏ (F : cubical_sets) (X : cube_category ^op), weq ((precomp_functor F) X) (exp_I F) X) → nat_iso precomp_functor exp_I.
+
+Lemma exp_I_iso_precomp_functor : nat_iso precomp_functor exp_I.
+Proof.
+  use functor_iso_from_pointwise_iso.
+  -
+  use make_iso.
+  - admit.
+  - use functor_iso_if_pointwise_iso.
+
+Search is_left_adjoint iso.
+
+Theorem tinyI : is_left_adjoint exp_I.
+Proof.
+  use is_left_adjoint_iso.
+  - apply homset_property.
+  - exact precomp_functor.
+  - exact exp_I_iso_precomp_functor.
+  - exact precomp_functor_has_right_adjoint.
 Defined.
