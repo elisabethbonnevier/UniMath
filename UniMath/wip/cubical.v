@@ -21,6 +21,7 @@ Require Import UniMath.CategoryTheory.yoneda.
 Require Import UniMath.CategoryTheory.Core.Isos.
 Require Import UniMath.CategoryTheory.categories.HSET.Structures.
 Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
+Require Import UniMath.CategoryTheory.categories.Type.Structures.
 
 Open Scope stn.
 
@@ -146,33 +147,39 @@ Proof.
   apply LimsHSET.
 Defined.
 
-Definition I : cubical_sets := yoneda cube_category (pr2 cube_category) 0.
+Definition I : cubical_sets := yoneda cube_category (homset_property cube_category) 0.
 
-Definition cubical_sets_binproduct : BinProducts cubical_sets.
+Definition cubical_sets_binproduct : BinProducts cubical_sets := BinProducts_PreShv.
+
+Definition cubical_sets_exponentials : Exponentials cubical_sets_binproduct := Exponentials_PreShv (homset_property cube_category).
+
+Definition exp_I : functor cubical_sets cubical_sets := pr1 (cubical_sets_exponentials I).
+
+(* Lemma first_iso (F : cubical_sets) (X : cube_category^op) : weq *)
+(*                                                               ((pr1 (exp_I F)) X) *)
+(*                                                               (cubical_sets ⟦yoneda cube_category (homset_property cube_category) X, exp_I F⟧). *)
+
+Lemma second_iso (F : cubical_sets) (X : cube_category^op) : weq
+                                                               (cubical_sets ⟦yoneda cube_category (homset_property cube_category) X, exp_I F⟧)
+                                                               (cubical_sets ⟦BinProductObject cubical_sets (cubical_sets_binproduct (yoneda cube_category (homset_property cube_category) X) (yoneda cube_category (homset_property cube_category) 0)), F⟧).
 Proof.
-  use BinProducts_functor_precat.
-  exact BinProductsHSET.
-Defined.
+  set (H := cubical_sets_exponentials).
+  unfold Exponentials in H.
+  unfold is_exponentiable in H.
+  unfold is_left_adjoint in H.
+  use precomp_functor_has_right_adjoint.
 
-Definition cubical_sets_exponentials : Exponentials cubical_sets_binproduct.
-Proof.
-  use Exponentials_functor_HSET.
-  apply has_homsets_opp.
-  apply homset_property.
-Defined.
+Lemma third_iso (F : cubical_sets) (X : cube_category^op) : weq
+                                                              (cubical_sets ⟦BinProductObject cubical_sets (cubical_sets_binproduct (yoneda cube_category (homset_property cube_category) X) (yoneda cube_category (homset_property cube_category) 0)), F⟧)
+                                                              (cubical_sets ⟦yoneda cube_category (homset_property cube_category) (BinProductObject cube_category (cube_category_binproduct X 0)), F⟧).
+Admitted.
 
-Definition exp_I : functor cubical_sets cubical_sets.
-Proof.
-  exact (pr1 (cubical_sets_exponentials I)).
-Defined.
+(* Lemma fourth_iso (F : cubical_sets) (X : cube_category^op) : weq *)
+(*                                                               (cubical_sets ⟦yoneda cube_category (homset_property cube_category) (BinProductObject cube_category (cube_category_binproduct X 0)), F⟧) *)
+(*                                                               ((pr1 (precomp_functor F) X)). *)
 
-(* UniMath.CategoryTheory.Core.NaturalTransformations.nat_iso definition of natural isomorphism between functors *)
-Search "bijection".
-Check precomp_functor.
-Print cubical_sets.
-About (ob cubical_sets).
-
-Lemma pointwise_iso_to_iso : (∏ (F : cubical_sets) (X : cube_category ^op), weq ((precomp_functor F) X) (exp_I F) X) → nat_iso precomp_functor exp_I.
+Lemma pointwise_iso_to_iso : (∏ (F : cubical_sets) (X : cube_category^op), weq ((precomp_functor F) X) (exp_I F) X) → nat_iso precomp_functor exp_I.
+Admitted.
 
 Lemma exp_I_iso_precomp_functor : nat_iso precomp_functor exp_I.
 Proof.
