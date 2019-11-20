@@ -147,7 +147,9 @@ Proof.
   apply LimsHSET.
 Defined.
 
-Definition I : cubical_sets := yoneda cube_category (homset_property cube_category) 0.
+Definition y : cube_category ⟶ cubical_sets := yoneda cube_category (homset_property cube_category).
+
+Definition I : cubical_sets := y 0.
 
 Definition cubical_sets_binproduct : BinProducts cubical_sets := BinProducts_PreShv.
 
@@ -157,17 +159,18 @@ Definition exp_I : functor cubical_sets cubical_sets := pr1 (cubical_sets_expone
 
 (* Lemma first_iso (F : cubical_sets) (X : cube_category^op) : weq *)
 (*                                                               ((pr1 (exp_I F)) X) *)
-(*                                                               (cubical_sets ⟦yoneda cube_category (homset_property cube_category) X, exp_I F⟧). *)
+(*                                                               (cubical_sets ⟦y X, exp_I F⟧). *)
 
 Lemma second_iso (F : cubical_sets) (X : cube_category^op) : weq
-                                                               (cubical_sets ⟦yoneda cube_category (homset_property cube_category) X, exp_I F⟧)
-                                                               (cubical_sets ⟦BinProductObject cubical_sets (cubical_sets_binproduct (yoneda cube_category (homset_property cube_category) X) (yoneda cube_category (homset_property cube_category) 0)), F⟧).
+                                                               (cubical_sets ⟦y X, exp_I F⟧)
+                                                               (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧).
 Proof.
-  set (H := cubical_sets_exponentials).
-  unfold Exponentials in H.
-  unfold is_exponentiable in H.
-  unfold is_left_adjoint in H.
-  use precomp_functor_has_right_adjoint.
+  use invweq.
+  set (adj := pr2 (cubical_sets_exponentials I)).
+  simpl in adj.
+  change (pr1 (cubical_sets_exponentials I)) with exp_I in adj.
+  exact (adjunction_hom_weq adj (y X) F).
+Defined.
 
 Lemma third_iso (F : cubical_sets) (X : cube_category^op) : weq
                                                               (cubical_sets ⟦BinProductObject cubical_sets (cubical_sets_binproduct (yoneda cube_category (homset_property cube_category) X) (yoneda cube_category (homset_property cube_category) 0)), F⟧)
