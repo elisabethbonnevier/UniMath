@@ -157,13 +157,28 @@ Definition cubical_sets_exponentials : Exponentials cubical_sets_binproduct := E
 
 Definition exp_I : functor cubical_sets cubical_sets := pr1 (cubical_sets_exponentials I).
 
-(* Lemma first_iso (F : cubical_sets) (X : cube_category^op) : weq *)
-(*                                                               ((pr1 (exp_I F)) X) *)
-(*                                                               (cubical_sets ⟦y X, exp_I F⟧). *)
+(* Lemma foo (n : nat) (F : cubical_sets) : unit. *)
+(* Proof. *)
+(*   set (p := pr1 (exp_I F) n). *)
+(*   unfold exp_I, cubical_sets_exponentials in p. *)
 
-Lemma second_iso (F : cubical_sets) (X : cube_category^op) : weq
-                                                               (cubical_sets ⟦y X, exp_I F⟧)
-                                                               (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧).
+(*   simpl in p. *)
+(* unfold Exponentials_PreShv in *. *)
+(* About Exponentials_functor_HSET. *)
+(* simpl in p. *)
+
+(* Check (pr1 p n). *)
+
+Lemma temp : has_homsets cubical_sets.
+Proof.
+  apply homset_property.
+Defined.
+
+Lemma first_iso (F : cubical_sets) (X : cube_category^op) :
+  iso ((pr1 (exp_I F)) X) (cubical_sets ⟦y X, exp_I F⟧,,temp _ _).
+Admitted.
+
+Lemma second_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y X, exp_I F⟧ ≃ cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧.
 Proof.
   use invweq.
   set (adj := pr2 (cubical_sets_exponentials I)).
@@ -172,33 +187,34 @@ Proof.
   exact (adjunction_hom_weq adj (y X) F).
 Defined.
 
-Lemma third_iso (F : cubical_sets) (X : cube_category^op) : weq
-                                                              (cubical_sets ⟦BinProductObject cubical_sets (cubical_sets_binproduct (yoneda cube_category (homset_property cube_category) X) (yoneda cube_category (homset_property cube_category) 0)), F⟧)
-                                                              (cubical_sets ⟦yoneda cube_category (homset_property cube_category) (BinProductObject cube_category (cube_category_binproduct X 0)), F⟧).
+Lemma yon_comm_w_binprod (C : category) (C_binproduct : BinProducts C) :
+  ∏ (X Y : C),
+  iso (yoneda C (homset_property C) (constprod_functor1 C_binproduct X Y))
+      (constprod_functor1 BinProducts_PreShv (yoneda C (homset_property C) X) (yoneda C (homset_property C) Y)).
 Admitted.
 
-(* Lemma fourth_iso (F : cubical_sets) (X : cube_category^op) : weq *)
-(*                                                               (cubical_sets ⟦yoneda cube_category (homset_property cube_category) (BinProductObject cube_category (cube_category_binproduct X 0)), F⟧) *)
-(*                                                               ((pr1 (precomp_functor F) X)). *)
+(* Lemma third_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧ ≃ cubical_sets ⟦y (constprod_functor1 cube_category_binproduct X 0), F⟧. *)
+(* Proof. *)
+(*   assert (H := y (constprod_functor1 cube_category_binproduct X 0) ≃ constprod_functor1 cubical_sets_binproduct I (y X)). *)
 
-Lemma pointwise_iso_to_iso : (∏ (F : cubical_sets) (X : cube_category^op), weq ((precomp_functor F) X) (exp_I F) X) → nat_iso precomp_functor exp_I.
-Admitted.
+(* Lemma fourth_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y (constprod_functor1 cube_category_binproduct X 0), F⟧ ≃ (pr1 (precomp_functor F) X). *)
+
+(* Lemma pointwise_iso_to_iso : (∏ (F : cubical_sets) (X : cube_category^op), (pr1 (precomp_functor F)) X ≃ (exp_I F) X) → nat_iso precomp_functor exp_I. *)
+(* (* functor_iso_from_pointwise_iso *) *)
+(* Admitted. *)
+
+About functor_iso_from_pointwise_iso.
 
 Lemma exp_I_iso_precomp_functor : nat_iso precomp_functor exp_I.
 Proof.
-  use functor_iso_from_pointwise_iso.
-  -
-  use make_iso.
-  - admit.
-  - use functor_iso_if_pointwise_iso.
+  (* apply pointwise_iso_to_iso. *)
+Admitted.
 
-Search is_left_adjoint iso.
-
-Theorem tinyI : is_left_adjoint exp_I.
+Theorem I_is_tiny : is_left_adjoint exp_I.
 Proof.
   use is_left_adjoint_iso.
   - apply homset_property.
   - exact precomp_functor.
-  - exact exp_I_iso_precomp_functor.
+  - exact (nat_iso_to_iso precomp_functor exp_I exp_I_iso_precomp_functor).
   - exact precomp_functor_has_right_adjoint.
 Defined.
