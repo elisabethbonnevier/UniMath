@@ -22,6 +22,7 @@ Require Import UniMath.CategoryTheory.Core.Isos.
 Require Import UniMath.CategoryTheory.categories.HSET.Structures.
 Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
 Require Import UniMath.CategoryTheory.categories.Type.Structures.
+Require Import UniMath.Foundations.Sets.
 
 Open Scope stn.
 
@@ -130,7 +131,7 @@ Definition prod_functor : functor cube_category cube_category
 
 Open Scope cat.
 
-Definition cubical_sets : category := PreShv cube_category.
+Definition cubical_sets : precategory := [cube_category^op, HSET, has_homsets_HSET].
 
 Definition precomp_functor : functor cubical_sets cubical_sets.
 Proof.
@@ -153,51 +154,51 @@ Definition I : cubical_sets := y 0.
 
 Definition cubical_sets_binproduct : BinProducts cubical_sets := BinProducts_PreShv.
 
-Definition cubical_sets_exponentials : Exponentials cubical_sets_binproduct := Exponentials_PreShv (homset_property cube_category).
+Definition cubical_sets_exponentials : Exponentials cubical_sets_binproduct.
+Proof.
+  use Exponentials_functor_HSET.
+  use has_homsets_opp.
+  exact (homset_property cube_category).
+Defined.
 
 Definition exp_I : functor cubical_sets cubical_sets := pr1 (cubical_sets_exponentials I).
 
-(* Lemma foo (n : nat) (F : cubical_sets) : unit. *)
-(* Proof. *)
-(*   set (p := pr1 (exp_I F) n). *)
-(*   unfold exp_I, cubical_sets_exponentials in p. *)
-
-(*   simpl in p. *)
-(* unfold Exponentials_PreShv in *. *)
-(* About Exponentials_functor_HSET. *)
-(* simpl in p. *)
-
-(* Check (pr1 p n). *)
-
-Lemma temp : has_homsets cubical_sets.
+Definition cubical_homsets : has_homsets cubical_sets.
 Proof.
-  apply homset_property.
+  use functor_category_has_homsets.
 Defined.
 
 Lemma first_iso (F : cubical_sets) (X : cube_category^op) :
-  iso ((pr1 (exp_I F)) X) (cubical_sets ⟦y X, exp_I F⟧,,temp _ _).
-Admitted.
+  (pr1hSet (pr1 (exp_I F) X)) ≃ (cubical_sets ⟦y X, exp_I F⟧).
+Proof.
+  use invweq.
+  exact (yoneda_weq cube_category (homset_property cube_category) X (exp_I F)).
+Defined.
 
 Lemma second_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y X, exp_I F⟧ ≃ cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧.
 Proof.
   use invweq.
   set (adj := pr2 (cubical_sets_exponentials I)).
-  simpl in adj.
   change (pr1 (cubical_sets_exponentials I)) with exp_I in adj.
   exact (adjunction_hom_weq adj (y X) F).
 Defined.
 
-Lemma yon_comm_w_binprod (C : category) (C_binproduct : BinProducts C) :
-  ∏ (X Y : C),
-  iso (yoneda C (homset_property C) (constprod_functor1 C_binproduct X Y))
-      (constprod_functor1 BinProducts_PreShv (yoneda C (homset_property C) X) (yoneda C (homset_property C) Y)).
+(* Lemma yon_comm_w_binprod (C : category) (C_binproduct : BinProducts C) : *)
+(*   ∏ (X Y : C), *)
+(*   iso (yoneda C (homset_property C) (constprod_functor1 C_binproduct X Y)) *)
+(*       (constprod_functor1 BinProducts_PreShv (yoneda C (homset_property C) X) (yoneda C (homset_property C) Y)). *)
+(* Admitted. *)
+
+Lemma third_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧ ≃ cubical_sets ⟦y (constprod_functor1 cube_category_binproduct X 0), F⟧.
+Proof.
 Admitted.
 
-(* Lemma third_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧ ≃ cubical_sets ⟦y (constprod_functor1 cube_category_binproduct X 0), F⟧. *)
-(* Proof. *)
-(*   assert (H := y (constprod_functor1 cube_category_binproduct X 0) ≃ constprod_functor1 cubical_sets_binproduct I (y X)). *)
-
-(* Lemma fourth_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y (constprod_functor1 cube_category_binproduct X 0), F⟧ ≃ (pr1 (precomp_functor F) X). *)
+Lemma fourth_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y (constprod_functor1 cube_category_binproduct X 0), F⟧ ≃ (pr1hSet (pr1 (precomp_functor F) X)).
+Proof.
+  set (T := pr1 (precomp_functor F)).
+  unfold cubical_sets in T.
+  set (H := yoneda_weq cubical_sets cubical_homsets (y (constprod_functor1 cube_category_binproduct X 0)) (precomp_functor F)).
+  unfold cubical_sets.
 
 (* Lemma pointwise_iso_to_iso : (∏ (F : cubical_sets) (X : cube_category^op), (pr1 (precomp_functor F)) X ≃ (exp_I F) X) → nat_iso precomp_functor exp_I. *)
 (* (* functor_iso_from_pointwise_iso *) *)
@@ -218,3 +219,6 @@ Proof.
   - exact (nat_iso_to_iso precomp_functor exp_I exp_I_iso_precomp_functor).
   - exact precomp_functor_has_right_adjoint.
 Defined.
+
+
+Lemma weq_to_iso {C : category} (X Y : C) : (pr1set X ≃ Y) -> (iso X Y).
