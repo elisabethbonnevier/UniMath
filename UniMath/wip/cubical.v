@@ -127,7 +127,7 @@ Proof.
 Defined.
 
 Definition prod_functor : functor cube_category cube_category
-  := constprod_functor2 cube_category_binproduct 0.
+  := constprod_functor1 cube_category_binproduct 0.
 
 Open Scope cat.
 
@@ -193,12 +193,22 @@ Lemma third_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦cons
 Proof.
 Admitted.
 
+Lemma precomp_compute (F : cubical_sets) (X : cube_category^op) : (pr1 F (constprod_functor1 cube_category_binproduct X 0)) = (pr1 (precomp_functor F) X).
+Proof.
+Admitted.
+
 Lemma fourth_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y (constprod_functor1 cube_category_binproduct X 0), F⟧ ≃ (pr1hSet (pr1 (precomp_functor F) X)).
 Proof.
-  set (T := pr1 (precomp_functor F)).
-  unfold cubical_sets in T.
-  set (H := yoneda_weq cubical_sets cubical_homsets (y (constprod_functor1 cube_category_binproduct X 0)) (precomp_functor F)).
-  unfold cubical_sets.
+  set (H := yoneda_weq cube_category (homset_property cube_category) (constprod_functor1 cube_category_binproduct X 0) F).
+  change (yoneda cube_category (homset_property cube_category)) with y in H.
+  change [cube_category^op, HSET, has_homsets_HSET] with cubical_sets in H.
+  (* rewrite (precomp_compute F X) in H. *)
+  (* unfold cubical_sets. *)
+  (* unfold precomp_functor. *)
+  (* unfold prod_functor. *)
+  (* unfold pre_composition_functor. *)
+  (* exact H. *)
+Admitted.
 
 (* Lemma pointwise_iso_to_iso : (∏ (F : cubical_sets) (X : cube_category^op), (pr1 (precomp_functor F)) X ≃ (exp_I F) X) → nat_iso precomp_functor exp_I. *)
 (* (* functor_iso_from_pointwise_iso *) *)
@@ -206,19 +216,86 @@ Proof.
 
 About functor_iso_from_pointwise_iso.
 
-Lemma exp_I_iso_precomp_functor : nat_iso precomp_functor exp_I.
+(* Arguments Exponentials_functor_HSET : simpl never. *)
+
+Lemma make_nat_trans_from_two_lv_iso {C : category} (F G : functor [C^op,SET] [C^op,SET])
+      (lv2_iso : ∏ X x, iso (pr1 (F X) x) (pr1 (G X) x))
+      (lv2_nat_trans : ∏ X, is_nat_trans _ _ (λ x, lv2_iso X x))
+      (lv1_nat_trans : is_nat_trans F G (λ X, make_nat_trans _ _ _ (lv2_nat_trans X))) :
+  [[C^op, SET], [C^op, SET]] ⟦ F, G ⟧.
 Proof.
-  (* apply pointwise_iso_to_iso. *)
+  use make_nat_trans.
+    + intros X.
+      use make_nat_trans.
+      * intros x.
+        exact (lv2_iso X x).
+      * use lv2_nat_trans.
+    + exact lv1_nat_trans.
+Defined.
+
+Lemma iso_from_two_lv_iso {C : category} (F G : functor [C^op,SET] [C^op,SET])
+      (lv2_iso : ∏ X x, iso (pr1 (F X) x) (pr1 (G X) x))
+      (lv2_nat_trans : ∏ X, is_nat_trans _ _ (λ x, lv2_iso X x))
+      (lv1_nat_trans : is_nat_trans F G (λ X, make_nat_trans _ _ _ (lv2_nat_trans X))) :
+      @iso [[C^op, SET], [C^op, SET]] F G.
+Proof.
+  use make_iso.
+  - exact (make_nat_trans_from_two_lv_iso F G lv2_iso lv2_nat_trans lv1_nat_trans).
+  - use is_iso_from_is_z_iso.
+    use make_is_z_isomorphism.
+    + use make_nat_trans_from_two_lv_iso.
+      * intros X x.
+        exact (iso_inv_from_iso (lv2_iso X x)).
+      * abstract (intros X x y f;
+                  apply pathsinv0, iso_inv_on_left; rewrite <- assoc;
+                  now apply pathsinv0, iso_inv_on_right, (lv2_nat_trans X)).
+      * abstract (intros X Y α;
+                  apply nat_trans_eq; [ apply homset_property|];
+                  intro x; simpl;
+                  apply pathsinv0, (iso_inv_on_left _ _ _ _ _ (lv2_iso Y x));
+                  rewrite <- assoc; apply pathsinv0, iso_inv_on_right;
+                  exact (eqtohomot (maponpaths pr1 (lv1_nat_trans X Y α)) x)).
+    + abstract (use make_is_inverse_in_precat;
+      [ apply nat_trans_eq; [ apply homset_property |]; intro X;
+        apply nat_trans_eq; [ apply homset_property |]; intro x;
+        exact (iso_inv_after_iso (lv2_iso X x))
+      | apply nat_trans_eq; [ apply homset_property |]; intro X;
+        apply nat_trans_eq; [ apply homset_property |]; intro x;
+        apply funextsec; intros y;
+        exact (eqtohomot (iso_after_iso_inv (lv2_iso X x)) y) ]).
+Defined.
+
+Lemma exp_I_iso_precomp_functor : @iso [[cube_category^op, SET], [cube_category^op, SET]]  precomp_functor exp_I.
+Proof.
+(*   use foo. *)
+(*   use (@iso_to_nat_iso (cubical_sets,,_) (cubical_sets,,_) precomp_functor exp_I). *)
+(*   admit. *)
+(*   admit. *)
+(*   use functor_iso_from_pointwise_iso. *)
+
+(*   - *)
+(* use make_nat_trans. *)
+(* + *)
+(*   intros F. *)
+(* use make_nat_trans. *)
+(* * *)
+(*   intros X. *)
+(*   admit. *)
+(*   * *)
+(* intros x y f. *)
+(* admit. *)
+(* + intros F G a. *)
+(* admit. *)
+(*   - intros F. *)
+(*     Print is_z_isomorphism. *)
+(* simpl. *)
 Admitted.
 
 Theorem I_is_tiny : is_left_adjoint exp_I.
 Proof.
   use is_left_adjoint_iso.
-  - apply homset_property.
+  - apply cubical_homsets.
   - exact precomp_functor.
-  - exact (nat_iso_to_iso precomp_functor exp_I exp_I_iso_precomp_functor).
+  - exact exp_I_iso_precomp_functor.
   - exact precomp_functor_has_right_adjoint.
 Defined.
-
-
-Lemma weq_to_iso {C : category} (X Y : C) : (pr1set X ≃ Y) -> (iso X Y).
