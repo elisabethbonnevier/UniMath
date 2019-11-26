@@ -172,7 +172,7 @@ Lemma first_iso (F : cubical_sets) (X : cube_category^op) :
   (pr1hSet (pr1 (exp_I F) X)) ≃ (cubical_sets ⟦y X, exp_I F⟧).
 Proof.
   use invweq.
-  exact (yoneda_weq cube_category (homset_property cube_category) X (exp_I F)).
+  use yoneda_weq.
 Defined.
 
 Lemma second_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y X, exp_I F⟧ ≃ cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧.
@@ -197,18 +197,10 @@ Lemma precomp_compute (F : cubical_sets) (X : cube_category^op) : (pr1 F (constp
 Proof.
 Admitted.
 
-Lemma fourth_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y (constprod_functor1 cube_category_binproduct X 0), F⟧ ≃ (pr1hSet (pr1 (precomp_functor F) X)).
+Lemma fourth_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧ ≃ (pr1hSet (pr1 (precomp_functor F) X)).
 Proof.
-  set (H := yoneda_weq cube_category (homset_property cube_category) (constprod_functor1 cube_category_binproduct X 0) F).
-  change (yoneda cube_category (homset_property cube_category)) with y in H.
-  change [cube_category^op, HSET, has_homsets_HSET] with cubical_sets in H.
-  (* rewrite (precomp_compute F X) in H. *)
-  (* unfold cubical_sets. *)
-  (* unfold precomp_functor. *)
-  (* unfold prod_functor. *)
-  (* unfold pre_composition_functor. *)
-  (* exact H. *)
-Admitted.
+  use yoneda_weq.
+Defined.
 
 (* Lemma pointwise_iso_to_iso : (∏ (F : cubical_sets) (X : cube_category^op), (pr1 (precomp_functor F)) X ≃ (exp_I F) X) → nat_iso precomp_functor exp_I. *)
 (* (* functor_iso_from_pointwise_iso *) *)
