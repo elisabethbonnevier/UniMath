@@ -182,19 +182,18 @@ Proof.
   exact (pr2 (cubical_sets_exponentials I)).
 Defined.
 
-(* Lemma yon_comm_w_binprod (C : category) (C_binproduct : BinProducts C) : *)
-(*   ∏ (X Y : C), *)
-(*   iso (yoneda C (homset_property C) (constprod_functor1 C_binproduct X Y)) *)
-(*       (constprod_functor1 BinProducts_PreShv (yoneda C (homset_property C) X) (yoneda C (homset_property C) Y)). *)
-(* Admitted. *)
-
-Lemma third_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧ ≃ cubical_sets ⟦y (constprod_functor1 cube_category_binproduct X 0), F⟧.
-Proof.
+Lemma yon_comm_w_binprod {C : category} (PC : BinProducts C) :
+  ∏ (X Y : C),
+  iso (yoneda C (homset_property C) (constprod_functor1 PC X Y))
+      (constprod_functor1 BinProducts_PreShv (yoneda C (homset_property C) X) (yoneda C (homset_property C) Y)).
+  intros X Y.
 Admitted.
 
-Lemma precomp_compute (F : cubical_sets) (X : cube_category^op) : (pr1 F (constprod_functor1 cube_category_binproduct X 0)) = (pr1 (precomp_functor F) X).
+Lemma third_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧ ≃ cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧.
 Proof.
-Admitted.
+  use iso_comp_right_weq.
+  use yon_comm_w_binprod.
+Defined.
 
 Lemma fourth_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧ ≃ (pr1hSet (pr1 (precomp_functor F) X)).
 Proof.
