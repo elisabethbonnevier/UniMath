@@ -184,9 +184,35 @@ Defined.
 
 Lemma yon_comm_w_binprod {C : category} (PC : BinProducts C) :
   ∏ (X Y : C),
-  iso (yoneda C (homset_property C) (constprod_functor1 PC X Y))
-      (constprod_functor1 BinProducts_PreShv (yoneda C (homset_property C) X) (yoneda C (homset_property C) Y)).
+  iso (yoneda _ (homset_property _) (BinProductObject _ (PC X Y)))
+      (BinProductObject (PreShv _) (BinProducts_PreShv (yoneda _ (homset_property _) X) (yoneda _ (homset_property _) Y))).
+Proof.
   intros X Y.
+  set (y := yoneda _ _).
+  use make_iso.
+  - use make_nat_trans.
+    + intros Z f.
+      constructor.
+      * exact (f · BinProductPr1 _ _).
+      * exact (f · BinProductPr2 _ _).
+    + intros Z W f.
+      use funextfun.
+      intro g.
+      cbn.
+      admit.
+  - use is_iso_from_is_z_iso.
+    use make_is_z_isomorphism.
+    + use make_nat_trans.
+      * intros Z [f1 f2].
+        exact (BinProductArrow _ (PC X Y) f1 f2).
+      * intros Z W f.
+        use funextfun.
+        intro g.
+        cbn.
+        admit.
+    + apply tpair.
+      * admit.
+      * admit.
 Admitted.
 
 Lemma third_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧ ≃ cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧.
@@ -199,10 +225,6 @@ Lemma fourth_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y (
 Proof.
   use yoneda_weq.
 Defined.
-
-(* Lemma pointwise_iso_to_iso : (∏ (F : cubical_sets) (X : cube_category^op), (pr1 (precomp_functor F)) X ≃ (exp_I F) X) → nat_iso precomp_functor exp_I. *)
-(* (* functor_iso_from_pointwise_iso *) *)
-(* Admitted. *)
 
 About functor_iso_from_pointwise_iso.
 
@@ -257,6 +279,7 @@ Defined.
 
 Lemma exp_I_iso_precomp_functor : @iso [[cube_category^op, SET], [cube_category^op, SET]]  precomp_functor exp_I.
 Proof.
+  use iso_from_two_lv_iso.
 (*   use foo. *)
 (*   use (@iso_to_nat_iso (cubical_sets,,_) (cubical_sets,,_) precomp_functor exp_I). *)
 (*   admit. *)
