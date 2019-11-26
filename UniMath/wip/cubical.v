@@ -178,9 +178,8 @@ Defined.
 Lemma second_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y X, exp_I F⟧ ≃ cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧.
 Proof.
   use invweq.
-  set (adj := pr2 (cubical_sets_exponentials I)).
-  change (pr1 (cubical_sets_exponentials I)) with exp_I in adj.
-  exact (adjunction_hom_weq adj (y X) F).
+  use adjunction_hom_weq.
+  exact (pr2 (cubical_sets_exponentials I)).
 Defined.
 
 (* Lemma yon_comm_w_binprod (C : category) (C_binproduct : BinProducts C) : *)
