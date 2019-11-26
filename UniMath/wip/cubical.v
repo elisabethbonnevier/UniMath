@@ -23,6 +23,7 @@ Require Import UniMath.CategoryTheory.categories.HSET.Structures.
 Require Import UniMath.CategoryTheory.Core.NaturalTransformations.
 Require Import UniMath.CategoryTheory.categories.Type.Structures.
 Require Import UniMath.Foundations.Sets.
+Require Import UniMath.CategoryTheory.categories.HSET.MonoEpiIso.
 
 Open Scope stn.
 
@@ -168,15 +169,17 @@ Proof.
   use functor_category_has_homsets.
 Defined.
 
-Lemma first_iso (F : cubical_sets) (X : cube_category^op) :
-  (pr1hSet (pr1 (exp_I F) X)) ≃ (cubical_sets ⟦y X, exp_I F⟧).
+Lemma first_iso (F : cubical_sets) (X : cube_category) :
+  iso (pr1 (exp_I F) X) (make_hSet (cubical_sets ⟦y X, exp_I F⟧) (cubical_homsets _ _)).
 Proof.
+  use hset_equiv_iso.
   use invweq.
   use yoneda_weq.
 Defined.
 
-Lemma second_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y X, exp_I F⟧ ≃ cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧.
+Lemma second_iso (F : cubical_sets) (X : cube_category) : @iso HSET (make_hSet (cubical_sets ⟦y X, exp_I F⟧) (cubical_homsets _ _)) (make_hSet (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧) (cubical_homsets _ _)).
 Proof.
+  use hset_equiv_iso.
   use invweq.
   use adjunction_hom_weq.
   exact (pr2 (cubical_sets_exponentials I)).
@@ -215,18 +218,32 @@ Proof.
       * admit.
 Admitted.
 
-Lemma third_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧ ≃ cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧.
+Lemma third_iso (F : cubical_sets) (X : cube_category) : @iso HSET (make_hSet (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧) (cubical_homsets _ _)) (make_hSet (cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧) (cubical_homsets _ _)).
 Proof.
+  use hset_equiv_iso.
   use iso_comp_right_weq.
   use yon_comm_w_binprod.
 Defined.
 
-Lemma fourth_iso (F : cubical_sets) (X : cube_category^op) : cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧ ≃ (pr1hSet (pr1 (precomp_functor F) X)).
+Lemma fourth_iso (F : cubical_sets) (X : cube_category) : @iso HSET (make_hSet (cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧) (cubical_homsets _ _)) (pr1 (precomp_functor F) X).
 Proof.
+  use hset_equiv_iso.
   use yoneda_weq.
 Defined.
 
-About functor_iso_from_pointwise_iso.
+Lemma total_iso (F : cubical_sets) (X : cube_category) : iso (pr1 (exp_I F) X) (pr1 (precomp_functor F) X).
+Proof.
+  use iso_comp.
+  - exact (make_hSet (cubical_sets ⟦y X, exp_I F⟧) (cubical_homsets _ _)).
+  - apply first_iso.
+  - use iso_comp.
+    + exact (make_hSet (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧) (cubical_homsets _ _)).
+    + apply second_iso.
+    + use iso_comp.
+      * exact (make_hSet (cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧) (cubical_homsets _ _)).
+      * apply third_iso.
+      * apply fourth_iso.
+Defined.
 
 (* Arguments Exponentials_functor_HSET : simpl never. *)
 
