@@ -132,7 +132,7 @@ Definition prod_functor : functor cube_category cube_category
 
 Open Scope cat.
 
-Definition cubical_sets : precategory := [cube_category^op, HSET, has_homsets_HSET].
+Definition cubical_sets : category := [cube_category^op, SET].
 
 Definition precomp_functor : functor cubical_sets cubical_sets.
 Proof.
@@ -159,15 +159,12 @@ Definition cubical_sets_exponentials : Exponentials cubical_sets_binproduct.
 Proof.
   use Exponentials_functor_HSET.
   use has_homsets_opp.
-  exact (homset_property cube_category).
+  apply homset_property.
 Defined.
 
 Definition exp_I : functor cubical_sets cubical_sets := pr1 (cubical_sets_exponentials I).
 
-Definition cubical_homsets : has_homsets cubical_sets.
-Proof.
-  use functor_category_has_homsets.
-Defined.
+Definition cubical_homsets : has_homsets cubical_sets := homset_property cubical_sets.
 
 Lemma first_iso (F : cubical_sets) (X : cube_category) :
   iso (pr1 (exp_I F) X) (make_hSet (cubical_sets ⟦y X, exp_I F⟧) (cubical_homsets _ _)).
@@ -198,25 +195,52 @@ Proof.
       constructor.
       * exact (f · BinProductPr1 _ _).
       * exact (f · BinProductPr2 _ _).
-    + intros Z W f.
-      use funextfun.
-      intro g.
-      cbn.
-      admit.
+    + abstract (intros Z W f;
+                use funextfun;
+                intro g;
+                use dirprodeq;
+                [exact (assoc' (f : C ⟦W, Z⟧) (g : C ⟦Z, BinProductObject C (PC X Y)⟧) (BinProductPr1 C (PC X Y)))
+                |exact (assoc' (f : C ⟦W, Z⟧) (g : C ⟦Z, BinProductObject C (PC X Y)⟧) (BinProductPr2 C (PC X Y)))]).
   - use is_iso_from_is_z_iso.
     use make_is_z_isomorphism.
     + use make_nat_trans.
       * intros Z [f1 f2].
         exact (BinProductArrow _ (PC X Y) f1 f2).
-      * intros Z W f.
-        use funextfun.
-        intro g.
-        cbn.
-        admit.
+      * abstract (intros Z W f;
+                  use funextfun;
+                  intros [g1 g2];
+                  cbn;
+                  set (f_g1 := (f : C ⟦W, Z⟧) · (g1 : C ⟦Z, X⟧));
+                  set (f_g2 := (f : C ⟦W, Z⟧) · (g2 : C ⟦Z, Y⟧));
+                  use BinProductArrowsEq;
+                  [rewrite (BinProductPr1Commutes C X Y (PC X Y) W f_g1 f_g2);
+                   rewrite <- (assoc (f : C ⟦W, Z⟧) (BinProductArrow C (PC X Y) g1 g2) (BinProductPr1 C (PC X Y)));
+                   rewrite (BinProductPr1Commutes C X Y (PC X Y) Z g1 g2);
+                   reflexivity
+                  |rewrite (BinProductPr2Commutes C X Y (PC X Y) W f_g1 f_g2);
+                   rewrite <- (assoc (f : C ⟦W, Z⟧) (BinProductArrow C (PC X Y) g1 g2) (BinProductPr2 C (PC X Y)));
+                   rewrite (BinProductPr2Commutes C X Y (PC X Y) Z g1 g2);
+                   reflexivity]).
     + apply tpair.
-      * admit.
-      * admit.
-Admitted.
+      * use nat_trans_eq.
+        -- apply has_homsets_HSET.
+        -- intro Z.
+           use funextfun.
+           intro f.
+           cbn.
+           rewrite <- (BinProductArrowEta C X Y (PC X Y) Z f).
+           reflexivity.
+      * use nat_trans_eq.
+        -- apply has_homsets_HSET.
+        -- intro Z.
+           use funextfun.
+           intro f.
+           use dirprodeq.
+           ++ cbn.
+              use BinProductPr1Commutes.
+           ++ cbn.
+              use BinProductPr2Commutes.
+Defined.
 
 Lemma third_iso (F : cubical_sets) (X : cube_category) : @iso HSET (make_hSet (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧) (cubical_homsets _ _)) (make_hSet (cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧) (cubical_homsets _ _)).
 Proof.
@@ -251,7 +275,7 @@ Lemma make_nat_trans_from_two_lv_iso {C : category} (F G : functor [C^op,SET] [C
       (lv2_iso : ∏ X x, iso (pr1 (F X) x) (pr1 (G X) x))
       (lv2_nat_trans : ∏ X, is_nat_trans _ _ (λ x, lv2_iso X x))
       (lv1_nat_trans : is_nat_trans F G (λ X, make_nat_trans _ _ _ (lv2_nat_trans X))) :
-  [[C^op, SET], [C^op, SET]] ⟦ F, G ⟧.
+      [[C^op, SET], [C^op, SET]] ⟦ F, G ⟧.
 Proof.
   use make_nat_trans.
     + intros X.
@@ -285,18 +309,34 @@ Proof.
                   rewrite <- assoc; apply pathsinv0, iso_inv_on_right;
                   exact (eqtohomot (maponpaths pr1 (lv1_nat_trans X Y α)) x)).
     + abstract (use make_is_inverse_in_precat;
-      [ apply nat_trans_eq; [ apply homset_property |]; intro X;
-        apply nat_trans_eq; [ apply homset_property |]; intro x;
-        exact (iso_inv_after_iso (lv2_iso X x))
-      | apply nat_trans_eq; [ apply homset_property |]; intro X;
-        apply nat_trans_eq; [ apply homset_property |]; intro x;
-        apply funextsec; intros y;
-        exact (eqtohomot (iso_after_iso_inv (lv2_iso X x)) y) ]).
+                [ apply nat_trans_eq; [ apply homset_property |]; intro X;
+                  apply nat_trans_eq; [ apply homset_property |]; intro x;
+                  exact (iso_inv_after_iso (lv2_iso X x))
+                | apply nat_trans_eq; [ apply homset_property |]; intro X;
+                  apply nat_trans_eq; [ apply homset_property |]; intro x;
+                  apply funextsec; intros y;
+                  exact (eqtohomot (iso_after_iso_inv (lv2_iso X x)) y) ]).
 Defined.
 
 Lemma exp_I_iso_precomp_functor : @iso [[cube_category^op, SET], [cube_category^op, SET]]  precomp_functor exp_I.
 Proof.
   use iso_from_two_lv_iso.
+  - intros F X.
+    use iso_inv_from_iso.
+    apply total_iso.
+  - intro F.
+    (* apply is_nat_trans_comp. *) (* Coq stannar *)
+    intros X Y f.
+    use funextfun.
+    intro a.
+    (* change [cube_category^op, SET] with cubical_sets in *. *)
+    (* set (etaX := (λ x : cube_category^op, *)
+                       (* (λ (F0 : [cube_category^op, SET]) (X : cube_category^op), iso_inv_from_iso (total_iso F0 X)) F x) X). *)
+    admit.
+  (* - use is_nat_trans_comp. *) (* Coq stannar *)
+  - intros F G f.
+    admit.
+    Search "nat" "trans" "comp".
 (*   use foo. *)
 (*   use (@iso_to_nat_iso (cubical_sets,,_) (cubical_sets,,_) precomp_functor exp_I). *)
 (*   admit. *)
