@@ -166,22 +166,6 @@ Definition exp_I : functor cubical_sets cubical_sets := pr1 (cubical_sets_expone
 
 Definition cubical_homsets : has_homsets cubical_sets := homset_property cubical_sets.
 
-Lemma first_iso (F : cubical_sets) (X : cube_category) :
-  iso (pr1 (exp_I F) X) (make_hSet (cubical_sets ⟦y X, exp_I F⟧) (cubical_homsets _ _)).
-Proof.
-  use hset_equiv_iso.
-  use invweq.
-  use yoneda_weq.
-Defined.
-
-Lemma second_iso (F : cubical_sets) (X : cube_category) : @iso HSET (make_hSet (cubical_sets ⟦y X, exp_I F⟧) (cubical_homsets _ _)) (make_hSet (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧) (cubical_homsets _ _)).
-Proof.
-  use hset_equiv_iso.
-  use invweq.
-  use adjunction_hom_weq.
-  exact (pr2 (cubical_sets_exponentials I)).
-Defined.
-
 Lemma yon_comm_w_binprod {C : category} (PC : BinProducts C) :
   ∏ (X Y : C),
   iso (yoneda _ (homset_property _) (BinProductObject _ (PC X Y)))
@@ -238,6 +222,24 @@ Proof.
                      [cbn; use BinProductPr1Commutes | cbn; use BinProductPr2Commutes]]]).
 Defined.
 
+(* The isomorphisms. *)
+
+Lemma first_iso (F : cubical_sets) (X : cube_category) :
+  iso (pr1 (exp_I F) X) (make_hSet (cubical_sets ⟦y X, exp_I F⟧) (cubical_homsets _ _)).
+Proof.
+  use hset_equiv_iso.
+  use invweq.
+  use yoneda_weq.
+Defined.
+
+Lemma second_iso (F : cubical_sets) (X : cube_category) : @iso HSET (make_hSet (cubical_sets ⟦y X, exp_I F⟧) (cubical_homsets _ _)) (make_hSet (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧) (cubical_homsets _ _)).
+Proof.
+  use hset_equiv_iso.
+  use invweq.
+  use adjunction_hom_weq.
+  exact (pr2 (cubical_sets_exponentials I)).
+Defined.
+
 Lemma third_iso (F : cubical_sets) (X : cube_category) : @iso HSET (make_hSet (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧) (cubical_homsets _ _)) (make_hSet (cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧) (cubical_homsets _ _)).
 Proof.
   use hset_equiv_iso.
@@ -265,7 +267,183 @@ Proof.
       * apply fourth_iso.
 Defined.
 
+(* The contravariant homfunctor. (Will be useful.) *)
+
+Definition contr_hom_funct_data {C : category} (c : C) : functor_data C^op SET.
+Proof.
+  use make_functor_data.
+  - intro d.
+    exact (make_hSet (C ⟦d, c⟧) ((homset_property C) _ _)).
+  - intros d d' f g.
+    exact ((f : C ⟦d', d⟧) · (g : C ⟦d, c⟧)).
+Defined.
+
+Lemma is_functor_contr_hom_funct {C : category} (c : C) : is_functor (contr_hom_funct_data c).
+Proof.
+  use tpair.
+  - intro d.
+    apply funextsec.
+    intro x.
+    use id_left.
+  - intros a b d f g.
+    apply funextsec.
+    intro x.
+    use assoc'.
+Defined.
+
+Definition contr_hom_funct {C : category} (c : C) : functor C^op SET :=
+  make_functor _ (is_functor_contr_hom_funct c).
+
+(* The isomorphism functors. *)
+
 (* Arguments Exponentials_functor_HSET : simpl never. *)
+
+Definition Fun1_functor_data : functor_data cubical_sets cubical_sets.
+Proof.
+  use make_functor_data.
+  - intro F.
+    use functor_composite.
+    + exact cubical_sets^op.
+    + use functor_opp.
+      exact y.
+    + exact (contr_hom_funct (exp_I F)).
+  - intros F G α.
+    use make_nat_trans.
+    + intros X f.
+      exact (f · (# exp_I α)).
+    + intros X Y f.
+      use funextsec.
+      intro h.
+      use assoc'.
+Defined.
+
+Lemma is_functor_Fun1 : is_functor Fun1_functor_data.
+Proof.
+  use tpair.
+  - intro F.
+    use nat_trans_eq.
+    + exact has_homsets_HSET.
+    + intro X.
+      use funextsec.
+      intro f.
+      set (idax := id_right f).
+      rewrite <- (functor_id exp_I F) in idax.
+      use idax.
+  - intros F G H α β.
+    use nat_trans_eq.
+    + exact has_homsets_HSET.
+    + intro X.
+      use funextsec.
+      intro f.
+      set (compax := assoc f (# exp_I α) (# exp_I β)).
+      rewrite <- (functor_comp exp_I α β) in compax.
+      use compax.
+Defined.
+
+Definition Fun1 : functor cubical_sets cubical_sets.
+Proof.
+  use make_functor.
+  - exact Fun1_functor_data.
+  - exact is_functor_Fun1.
+Defined.
+
+Definition Fun2_functor_data : functor_data cubical_sets cubical_sets.
+Proof.
+  use make_functor_data.
+    - intro F.
+      use functor_composite.
+      + exact cubical_sets^op.
+      + use functor_opp.
+        use functor_composite.
+        -- exact cubical_sets.
+        -- exact y.
+        -- exact (constprod_functor1 cubical_sets_binproduct I).
+      + exact (contr_hom_funct F).
+    - intros F G α.
+      use make_nat_trans.
+      + intros X f.
+        exact (f · α).
+      + intros X Y f.
+        use funextsec.
+        intro g.
+        use assoc'.
+Defined.
+
+Lemma is_functor_Fun2 : is_functor Fun2_functor_data.
+Proof.
+  use tpair.
+  - intro F.
+    use nat_trans_eq.
+    + exact has_homsets_HSET.
+    + intro X.
+      use funextsec.
+      intro f.
+      use id_right.
+  - intros F G H α β.
+    use nat_trans_eq.
+    + exact has_homsets_HSET.
+    + intro X.
+      use funextsec.
+      intro f.
+      use assoc.
+Defined.
+
+Definition Fun2 : functor cubical_sets cubical_sets.
+Proof.
+  use make_functor.
+  - exact Fun2_functor_data.
+  - exact is_functor_Fun2.
+Defined.
+
+Definition Fun3_functor_data : functor_data cubical_sets cubical_sets.
+Proof.
+  use make_functor_data.
+  - intro F.
+    use functor_composite.
+    + exact cubical_sets^op.
+    + use functor_opp.
+      use functor_composite.
+      * exact cube_category.
+      * exact (constprod_functor1 cube_category_binproduct 0).
+      * exact y.
+    + exact (contr_hom_funct F).
+  - intros F G α.
+    use make_nat_trans.
+    + intros X f.
+        exact (f · α).
+    + intros X Y f.
+        use funextsec.
+        intro g.
+        use assoc'.
+Defined.
+
+Lemma is_functor_Fun3 : is_functor Fun3_functor_data.
+Proof.
+  use tpair.
+  - intro F.
+    use nat_trans_eq.
+    + exact has_homsets_HSET.
+    + intro X.
+      use funextsec.
+      intro f.
+      use id_right.
+  - intros F G H α β.
+    use nat_trans_eq.
+    + exact has_homsets_HSET.
+    + intro X.
+      use funextsec.
+      intro f.
+      use assoc.
+Defined.
+
+Definition Fun3 : functor cubical_sets cubical_sets.
+Proof.
+  use make_functor.
+  - exact Fun3_functor_data.
+  - exact is_functor_Fun3.
+Defined.
+
+(* The functors are pairwise isomorphic. *)
 
 Lemma make_nat_trans_from_two_lv_iso {C : category} (F G : functor [C^op,SET] [C^op,SET])
       (lv2_iso : ∏ X x, iso (pr1 (F X) x) (pr1 (G X) x))
