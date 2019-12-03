@@ -30,14 +30,14 @@ Open Scope stn.
 (* Construction of cartesian cube category using nat as object set *)
 
 Definition cube_precategory_ob_mor : precategory_ob_mor :=
-  make_precategory_ob_mor nat (λ (m n : nat), ⟦n⟧ → ⟦m⟧ ⨿ ⟦2⟧).
+  make_precategory_ob_mor nat (λ m n : nat, ⟦n⟧ → ⟦m⟧ ⨿ ⟦2⟧).
 
 Definition cube_precategory_data : precategory_data.
 Proof.
   exists cube_precategory_ob_mor.
   split.
   - intro n.
-    exact (λ (i : ⟦n⟧), inl i).
+    exact (λ i : ⟦n⟧, inl i).
   - intros l m n f g i.
     induction (g i) as [a | b].
     + exact (f a).
@@ -49,15 +49,13 @@ Proof.
   exists cube_precategory_data.
   use make_is_precategory_one_assoc.
   - intros m n f.
-    apply funextfun.
-    intro i.
+    apply funextfun; intro i.
     cbn.
     now induction (f i).
   - intros m n g.
     apply idpath.
   - intros k l m n f g h.
-    apply funextfun.
-    intro i.
+    apply funextfun; intro i.
     cbn.
     now induction (h i).
 Defined.
@@ -66,12 +64,11 @@ Definition cube_category : category.
 Proof.
   exists cube_precategory.
   intros m n.
-  apply funspace_isaset.
-  apply isfinite_isaset.
+  apply funspace_isaset, isfinite_isaset.
   apply isfinitecoprod; apply isfinitestn.
 Defined.
 
-(* Construction of binary product *)
+(* Construction of binary products in cube_category *)
 
 Lemma stn_left_to_coprod (m n : nat) (i : ⟦ m ⟧) :
   weqfromcoprodofstn_invmap m n (stn_left m n i) = inl i.
@@ -107,24 +104,21 @@ Proof.
       * intro h.
         now apply isapropdirprod; apply homset_property.
       * intros h [H1 H2].
-        apply funextfun.
-        intros i.
+        apply funextfun; intros i.
         rewrite <- (maponpaths h (weqfromcoprodofstn_eq2 m n i)).
         induction (weqfromcoprodofstn_invmap m n i) as [x1 | x2].
         -- now rewrite <- H1.
         -- now rewrite <- H2.
 Defined.
 
-(* Construction of cubical set *)
+(* Construction of cubical sets *)
 
 Lemma zero_is_terminal : Terminal cube_category.
 Proof.
-  use make_Terminal.
-  - exact 0.
-  - use make_isTerminal.
-    intro n.
-    apply iscontrfunfromempty2.
-    use weqstn0toempty.
+  exists 0.
+  intro n.
+  apply iscontrfunfromempty2.
+  use weqstn0toempty.
 Defined.
 
 Definition prod_functor : functor cube_category cube_category
@@ -137,8 +131,7 @@ Definition cubical_sets : category := [cube_category^op, SET].
 Definition precomp_functor : functor cubical_sets cubical_sets.
 Proof.
   use pre_composition_functor.
-  - apply has_homsets_opp.
-    apply homset_property.
+  - apply has_homsets_opp, homset_property.
   - apply functor_opp.
     exact prod_functor.
 Defined.
@@ -149,7 +142,8 @@ Proof.
   apply LimsHSET.
 Defined.
 
-Definition y : cube_category ⟶ cubical_sets := yoneda cube_category (homset_property cube_category).
+Definition y : cube_category ⟶ cubical_sets :=
+  yoneda cube_category (homset_property cube_category).
 
 Definition I : cubical_sets := y 0.
 
@@ -175,13 +169,11 @@ Proof.
   use make_iso.
   - use make_nat_trans.
     + intros Z f.
-      constructor.
+      split.
       * exact (f · BinProductPr1 _ _).
       * exact (f · BinProductPr2 _ _).
     + abstract (intros Z W f;
-                use funextfun;
-                intro g;
-                use dirprodeq;
+                use funextfun; intro g; use dirprodeq;
                 [exact (assoc' (f : C ⟦W, Z⟧) (g : C ⟦Z, BinProductObject C (PC X Y)⟧) (BinProductPr1 C (PC X Y)))
                 |exact (assoc' (f : C ⟦W, Z⟧) (g : C ⟦Z, BinProductObject C (PC X Y)⟧) (BinProductPr2 C (PC X Y)))]).
   - use is_iso_from_is_z_iso.
@@ -189,40 +181,26 @@ Proof.
     + use make_nat_trans.
       * intros Z [f1 f2].
         exact (BinProductArrow _ (PC X Y) f1 f2).
-      * abstract (intros Z W f;
-                  use funextfun;
-                  intros [g1 g2];
-                  cbn;
+      * abstract (intros Z W f; use funextfun; intros [g1 g2]; cbn;
                   set (f_g1 := (f : C ⟦W, Z⟧) · (g1 : C ⟦Z, X⟧));
                   set (f_g2 := (f : C ⟦W, Z⟧) · (g2 : C ⟦Z, Y⟧));
                   use BinProductArrowsEq;
                   [rewrite (BinProductPr1Commutes C X Y (PC X Y) W f_g1 f_g2);
                    rewrite <- (assoc (f : C ⟦W, Z⟧) (BinProductArrow C (PC X Y) g1 g2) (BinProductPr1 C (PC X Y)));
-                   rewrite (BinProductPr1Commutes C X Y (PC X Y) Z g1 g2);
-                   reflexivity
+                   rewrite (BinProductPr1Commutes C X Y (PC X Y) Z g1 g2); apply idpath
                   |rewrite (BinProductPr2Commutes C X Y (PC X Y) W f_g1 f_g2);
                    rewrite <- (assoc (f : C ⟦W, Z⟧) (BinProductArrow C (PC X Y) g1 g2) (BinProductPr2 C (PC X Y)));
-                   rewrite (BinProductPr2Commutes C X Y (PC X Y) Z g1 g2);
-                   reflexivity]).
+                   rewrite (BinProductPr2Commutes C X Y (PC X Y) Z g1 g2); apply idpath]).
     + abstract (apply tpair;
-                [use nat_trans_eq;
-                    [apply has_homsets_HSET
-                    |intro Z;
-                     use funextfun;
-                     intro f;
-                     cbn;
-                     rewrite <- (BinProductArrowEta C X Y (PC X Y) Z f);
-                     reflexivity]
-                |use nat_trans_eq;
-                    [apply has_homsets_HSET
-                    |intro Z;
-                     use funextfun;
-                     intro f;
-                     use dirprodeq;
-                     [cbn; use BinProductPr1Commutes | cbn; use BinProductPr2Commutes]]]).
+                [apply (nat_trans_eq has_homsets_HSET);
+                 intro Z; use funextfun; intro f; cbn;
+                 rewrite <- (BinProductArrowEta C X Y (PC X Y) Z f); apply idpath
+                |use (nat_trans_eq has_homsets_HSET);
+                 intro Z; use funextfun; intro f; use dirprodeq;
+                 [cbn; use BinProductPr1Commutes | cbn; use BinProductPr2Commutes]]).
 Defined.
 
-(* The isomorphisms. *)
+(* The isomorphisms between sets. *)
 
 Lemma first_iso (F : cubical_sets) (X : cube_category) :
   iso (pr1 (exp_I F) X) (make_hSet (cubical_sets ⟦y X, exp_I F⟧) (cubical_homsets _ _)).
@@ -232,7 +210,10 @@ Proof.
   use yoneda_weq.
 Defined.
 
-Lemma second_iso (F : cubical_sets) (X : cube_category) : @iso HSET (make_hSet (cubical_sets ⟦y X, exp_I F⟧) (cubical_homsets _ _)) (make_hSet (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧) (cubical_homsets _ _)).
+Lemma second_iso (F : cubical_sets) (X : cube_category) :
+  @iso HSET
+       (make_hSet (cubical_sets ⟦y X, exp_I F⟧) (cubical_homsets _ _))
+       (make_hSet (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧) (cubical_homsets _ _)).
 Proof.
   use hset_equiv_iso.
   use invweq.
@@ -240,31 +221,23 @@ Proof.
   exact (pr2 (cubical_sets_exponentials I)).
 Defined.
 
-Lemma third_iso (F : cubical_sets) (X : cube_category) : @iso HSET (make_hSet (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧) (cubical_homsets _ _)) (make_hSet (cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧) (cubical_homsets _ _)).
+Lemma third_iso (F : cubical_sets) (X : cube_category) :
+  @iso HSET
+       (make_hSet (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧) (cubical_homsets _ _))
+       (make_hSet (cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧) (cubical_homsets _ _)).
 Proof.
   use hset_equiv_iso.
   use iso_comp_right_weq.
   use yon_comm_w_binprod.
 Defined.
 
-Lemma fourth_iso (F : cubical_sets) (X : cube_category) : @iso HSET (make_hSet (cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧) (cubical_homsets _ _)) (pr1 (precomp_functor F) X).
+Lemma fourth_iso (F : cubical_sets) (X : cube_category) :
+  @iso HSET
+       (make_hSet (cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧) (cubical_homsets _ _))
+       (pr1 (precomp_functor F) X).
 Proof.
   use hset_equiv_iso.
   use yoneda_weq.
-Defined.
-
-Lemma total_iso (F : cubical_sets) (X : cube_category) : iso (pr1 (exp_I F) X) (pr1 (precomp_functor F) X).
-Proof.
-  use iso_comp.
-  - exact (make_hSet (cubical_sets ⟦y X, exp_I F⟧) (cubical_homsets _ _)).
-  - apply first_iso.
-  - use iso_comp.
-    + exact (make_hSet (cubical_sets ⟦constprod_functor1 cubical_sets_binproduct I (y X), F⟧) (cubical_homsets _ _)).
-    + apply second_iso.
-    + use iso_comp.
-      * exact (make_hSet (cubical_sets ⟦y (constprod_functor1 cube_category_binproduct 0 X), F⟧) (cubical_homsets _ _)).
-      * apply third_iso.
-      * apply fourth_iso.
 Defined.
 
 (* The contravariant homfunctor. (Will be useful.) (Only found bivariant homfunctor in library.) *)
@@ -280,14 +253,12 @@ Defined.
 
 Lemma is_functor_conv_hom_funct {C : category} (c : C) : is_functor (conv_hom_funct_data c).
 Proof.
-  use tpair.
+  split.
   - intro d.
-    apply funextsec.
-    intro x.
+    apply funextsec; intro x.
     use id_left.
   - intros a b d f g.
-    apply funextsec.
-    intro x.
+    apply funextsec; intro x.
     use assoc'.
 Defined.
 
@@ -295,8 +266,6 @@ Definition conv_hom_funct {C : category} (c : C) : functor C^op SET :=
   make_functor _ (is_functor_conv_hom_funct c).
 
 (* The isomorphism functors. *)
-
-(* Arguments Exponentials_functor_HSET : simpl never. *)
 
  Definition Fun1_functor_data : functor_data cubical_sets cubical_sets.
 Proof.
@@ -312,14 +281,13 @@ Proof.
     + intros X f.
       exact (f · (# exp_I α)).
     + intros X Y f.
-      use funextsec.
-      intro h.
+      use funextsec; intro h.
       use assoc'.
 Defined.
 
 Lemma is_functor_Fun1 : is_functor Fun1_functor_data.
 Proof.
-  use tpair;
+  split;
     [ intro F | intros F G H α β ];
     use (nat_trans_eq has_homsets_HSET); intro X;
     use funextsec; intro f;
@@ -351,14 +319,13 @@ Proof.
       + intros X f.
         exact (f · α).
       + intros X Y f.
-        use funextsec.
-        intro g.
+        use funextsec; intro g.
         use assoc'.
 Defined.
 
 Lemma is_functor_Fun2 : is_functor Fun2_functor_data.
 Proof.
-  use tpair;
+  split;
     [ intro F | intros F G H α β ];
     use (nat_trans_eq has_homsets_HSET); intro X;
     use funextsec; intro f;
@@ -383,16 +350,15 @@ Proof.
   - intros F G α.
     use make_nat_trans.
     + intros X f.
-        exact (f · α).
+      exact (f · α).
     + intros X Y f.
-        use funextsec.
-        intro g.
-        use assoc'.
+      use funextsec; intro g.
+      use assoc'.
 Defined.
 
 Lemma is_functor_Fun3 : is_functor Fun3_functor_data.
 Proof.
-   use tpair;
+   split;
     [ intro F | intros F G H α β ];
     use (nat_trans_eq has_homsets_HSET); intro X;
     use funextsec; intro f;
@@ -451,9 +417,9 @@ Proof.
                   exact (eqtohomot (iso_after_iso_inv (lv2_iso X x)) y) ]).
 Defined.
 
-(* The functors are pairwise isomorphic. *)
+(* The isomorphisms on functor level. *)
 
-Lemma Fun1_lem1 (F : cubical_sets) :
+Lemma first_iso_lv2_nat_trans (F : cubical_sets) :
   is_nat_trans _ (pr1 (Fun1 F)) (λ x, first_iso F x).
 Proof.
   intros X Y f.
@@ -467,9 +433,9 @@ Proof.
   now apply funextsec; intro b; cbn; induction (f b).
 Time Qed. (* 0.923s *)
 
-Lemma Fun1_lem2 :
+Lemma first_iso_lv1_nat_trans :
   is_nat_trans exp_I Fun1
-    (λ X, make_nat_trans _ (pr1 (Fun1 X)) (first_iso X) (Fun1_lem1 X)).
+    (λ X, make_nat_trans _ (pr1 (Fun1 X)) (first_iso X) (first_iso_lv2_nat_trans X)).
 Proof.
   intros X Y f.
   apply (nat_trans_eq has_homsets_HSET); intros ?.
@@ -487,11 +453,11 @@ Lemma first_functor_iso : @iso [cubical_sets, cubical_sets] exp_I Fun1.
 Proof.
   use iso_from_two_lv_iso.
   - use first_iso.
-  - use Fun1_lem1.
-  - use Fun1_lem2.
+  - use first_iso_lv2_nat_trans.
+  - use first_iso_lv1_nat_trans.
 Defined.
 
-Lemma Fun2_lem1 (F : cubical_sets) :
+Lemma second_iso_lv2_nat_trans (F : cubical_sets) :
   is_nat_trans (pr1 (Fun1 F)) (pr1 (Fun2 F)) (λ x, second_iso F x).
 Proof.
   intros X Y f.
@@ -501,9 +467,9 @@ Proof.
   apply maponpaths; apply idpath.
 Qed.
 
-Lemma Fun2_lem2 :
+Lemma second_iso_lv1_nat_trans :
   is_nat_trans Fun1 Fun2
-    (λ X, make_nat_trans (pr1 (Fun1 X)) (pr1 (Fun2 X)) (second_iso X) (Fun2_lem1 X)).
+    (λ X, make_nat_trans (pr1 (Fun1 X)) (pr1 (Fun2 X)) (second_iso X) (second_iso_lv2_nat_trans X)).
 Proof.
   intros X Y f.
   apply (nat_trans_eq has_homsets_HSET); intros ?.
@@ -517,11 +483,11 @@ Lemma second_functor_iso : @iso [cubical_sets, cubical_sets] Fun1 Fun2.
 Proof.
   use iso_from_two_lv_iso.
   - use second_iso.
-  - use Fun2_lem1.
-  - use Fun2_lem2.
+  - use second_iso_lv2_nat_trans.
+  - use second_iso_lv1_nat_trans.
 Defined.
 
-Lemma Fun3_lem1 (F : cubical_sets) :
+Lemma third_iso_lv2_nat_trans (F : cubical_sets) :
   is_nat_trans (pr1 (Fun2 F)) (pr1 (Fun3 F)) (λ x, third_iso F x).
 Proof.
   intros X Y f.
@@ -540,9 +506,9 @@ Proof.
     now induction (f n).
 Qed.
 
-Lemma Fun3_lem2 :
+Lemma third_iso_lv1_nat_trans :
   is_nat_trans Fun2 Fun3
-    (λ X, make_nat_trans (pr1 (Fun2 X)) (pr1 (Fun3 X)) (third_iso X) (Fun3_lem1 X)).
+    (λ X, make_nat_trans (pr1 (Fun2 X)) (pr1 (Fun3 X)) (third_iso X) (third_iso_lv2_nat_trans X)).
 Proof.
   intros X Y f.
   apply (nat_trans_eq has_homsets_HSET); intros ?.
@@ -556,11 +522,11 @@ Lemma third_functor_iso : @iso [cubical_sets, cubical_sets] Fun2 Fun3.
 Proof.
   use iso_from_two_lv_iso.
   - use third_iso.
-  - use Fun3_lem1.
-  - use Fun3_lem2.
+  - use third_iso_lv2_nat_trans.
+  - use third_iso_lv1_nat_trans.
 Defined.
 
-Lemma Fun4_lem1 (F : cubical_sets) :
+Lemma fourth_iso_lv2_nat_trans (F : cubical_sets) :
   is_nat_trans (pr1 (Fun3 F)) _ (λ x, fourth_iso F x).
 Proof.
   intros X Y f.
@@ -576,9 +542,9 @@ Proof.
   now induction (f n').
 Qed.
 
-Lemma Fun4_lem2 :
+Lemma fourth_iso_lv1_nat_trans :
   is_nat_trans Fun3 precomp_functor
-    (λ X, make_nat_trans (pr1 (Fun3 X)) _ (fourth_iso X) (Fun4_lem1 X)).
+    (λ X, make_nat_trans (pr1 (Fun3 X)) _ (fourth_iso X) (fourth_iso_lv2_nat_trans X)).
 Proof.
   intros X Y f.
   apply (nat_trans_eq has_homsets_HSET); intros ?.
@@ -590,9 +556,11 @@ Lemma fourth_functor_iso : @iso [cubical_sets, cubical_sets] Fun3 precomp_functo
 Proof.
   use iso_from_two_lv_iso.
   - use fourth_iso.
-  - use Fun4_lem1.
-  - use Fun4_lem2.
+  - use fourth_iso_lv2_nat_trans.
+  - use fourth_iso_lv1_nat_trans.
 Defined.
+
+(* The exponential functor and the precomposition functor are isomorphic. *)
 
 Lemma exp_I_iso_precomp_functor : @iso [[cube_category^op, SET], [cube_category^op, SET]]  precomp_functor exp_I.
 Proof.
@@ -603,10 +571,12 @@ Proof.
   use fourth_functor_iso.
 Defined.
 
+(* The exponential functor has a right adjoint, i.e. the unit interval is tiny. *)
+
 Theorem I_is_tiny : is_left_adjoint exp_I.
 Proof.
   use is_left_adjoint_iso.
-  - apply cubical_homsets.
+  - exact cubical_homsets.
   - exact precomp_functor.
   - exact exp_I_iso_precomp_functor.
   - exact precomp_functor_has_right_adjoint.
