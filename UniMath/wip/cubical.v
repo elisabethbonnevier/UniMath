@@ -265,9 +265,34 @@ Defined.
 Definition conv_hom_funct {C : category} (c : C) : functor C^op SET :=
   make_functor _ (is_functor_conv_hom_funct c).
 
+(* The covariant hom-functor. *)
+
+Definition cov_hom_funct_data {C : category} (c : C) : functor_data C SET.
+Proof.
+  use make_functor_data.
+  - intro d.
+    exact (make_hSet (C ⟦c, d⟧) ((homset_property C) _ _)).
+  - intros d d' f g.
+    exact ((g : C ⟦c, d⟧) · (f : C ⟦d, d'⟧)).
+Defined.
+
+Lemma is_functor_cov_hom_funct {C : category} (c : C) : is_functor (cov_hom_funct_data c).
+Proof.
+  split.
+  - intro d.
+    apply funextsec; intro x.
+    use id_right.
+  - intros a b d f g.
+    apply funextsec; intro x.
+    use assoc.
+Defined.
+
+Definition cov_hom_funct {C : category} (c : C) : functor C SET :=
+  make_functor _ (is_functor_cov_hom_funct c).
+
 (* The isomorphism functors. *)
 
- Definition Fun1_functor_data : functor_data cubical_sets cubical_sets.
+Definition Fun1_functor_data : functor_data cubical_sets cubical_sets.
 Proof.
   use make_functor_data.
   - intro F.
@@ -580,4 +605,393 @@ Proof.
   - exact precomp_functor.
   - exact exp_I_iso_precomp_functor.
   - exact precomp_functor_has_right_adjoint.
+Defined.
+
+
+
+------------------------------------------------------------------------------------------------------
+
+
+
+(* We try to generalize the above and find out what properties a category C must have in order for (some) interval object to have a right adjoint. *)
+
+Section generalization.
+
+  Context {C : category}.
+  Variable PC : BinProducts C.
+  Variable i : C.
+
+Definition preC := PreShv C.
+
+Definition gen_prod_functor : functor C C
+  := constprod_functor1 PC i.
+
+Open Scope cat.
+
+(* Definition C_PreShv : category := PreShv C. *)
+
+Definition gen_precomp_functor : functor preC preC.
+Proof.
+  use pre_composition_functor.
+  - apply has_homsets_opp, homset_property.
+  - apply functor_opp.
+    exact gen_prod_functor.
+Defined.
+
+Lemma gen_precomp_functor_has_right_adjoint : is_left_adjoint gen_precomp_functor.
+Proof.
+  apply RightKanExtension_from_limits.
+  apply LimsHSET.
+Defined.
+
+Definition yo : C ⟶ preC :=
+  yoneda C (homset_property C).
+
+Definition II : preC := yo i.
+
+Definition PreShv_binproduct : BinProducts preC := BinProducts_PreShv.
+
+Definition PreShv_exponentials : Exponentials PreShv_binproduct.
+Proof.
+  use Exponentials_functor_HSET.
+  use has_homsets_opp.
+  apply homset_property.
+Defined.
+
+Definition exp_II : functor preC preC := pr1 (PreShv_exponentials II).
+
+Definition PreShv_homsets : has_homsets preC := homset_property preC.
+
+(* Naturality of the yoneda isomorphism in [C^op, SET]. *)
+
+Definition eval_functor_data (c : C) : functor_data preC SET.
+Proof.
+  use make_functor_data.
+  - intro F.
+    exact (pr1 F c).
+  - intros F G α.
+    exact (pr1 α c).
+Defined.
+
+Lemma is_functor_eval_functor (c : C) : is_functor (eval_functor_data c).
+Proof.
+  split.
+  - intro F.
+    apply idpath.
+  - intros F G H α β.
+    apply idpath.
+Defined.
+
+Definition eval_functor (c : C) : functor preC SET :=
+  make_functor _ (is_functor_eval_functor c).
+
+Definition cov_comp_w_yo (c : C) : functor preC SET :=
+  cov_hom_funct (yo c).
+
+Lemma is_natural_in_preshv_yoneda (c : C) :
+  is_nat_trans (cov_comp_w_yo c) (eval_functor c)
+               (λ F, yoneda_map_1 C (homset_property C) c F).
+Proof.
+  intros F G η.
+  use funextsec; intro ϕ.
+  apply idpath.
+Defined.
+
+(* The isomorphisms between sets. *)
+
+Lemma gen_first_iso (F : preC) (X : C) :
+  @iso HSET (make_hSet (preC ⟦yo X, exp_II F⟧) (PreShv_homsets _ _)) (pr1 (exp_II F) X).
+Proof.
+  use hset_equiv_iso.
+  use yoneda_weq.
+Defined.
+
+Lemma gen_second_iso (F : preC) (X : C) :
+  @iso HSET
+       (make_hSet (preC ⟦yo X, exp_II F⟧) (PreShv_homsets _ _))
+       (make_hSet (preC ⟦constprod_functor1 PreShv_binproduct II (yo X), F⟧) (PreShv_homsets _ _)).
+Proof.
+  use hset_equiv_iso.
+  use invweq.
+  use adjunction_hom_weq.
+  exact (pr2 (PreShv_exponentials II)).
+Defined.
+
+Lemma gen_third_iso (F : preC) (X : C) :
+  @iso HSET
+       (make_hSet (preC ⟦constprod_functor1 PreShv_binproduct II (yo X), F⟧) (PreShv_homsets _ _))
+       (make_hSet (preC ⟦yo (constprod_functor1 PC i X), F⟧) (PreShv_homsets _ _)).
+Proof.
+  use hset_equiv_iso.
+  use iso_comp_right_weq.
+  use yon_comm_w_binprod.
+Defined.
+
+Lemma gen_fourth_iso (F : preC) (X : C) :
+  @iso HSET
+       (make_hSet (preC ⟦yo (constprod_functor1 PC i X), F⟧) (PreShv_homsets _ _))
+       (pr1 (gen_precomp_functor F) X).
+Proof.
+  use hset_equiv_iso.
+  use yoneda_weq.
+Defined.
+
+(* The isomorphism functors. *)
+
+Definition gen_Fun1_functor_data : functor_data preC preC.
+Proof.
+  use make_functor_data.
+  - intro F.
+    use functor_composite.
+    + exact preC^op.
+    + use functor_opp.
+      exact yo.
+    + exact (conv_hom_funct (exp_II F)).
+  - intros F G α.
+    use make_nat_trans.
+    + intros X f.
+      exact (f · (# exp_II α)).
+    + intros X Y f.
+      use funextsec; intro h.
+      use assoc'.
+Defined.
+
+Lemma gen_is_functor_Fun1 : is_functor gen_Fun1_functor_data.
+Proof.
+  split;
+    [ intro F | intros F G H α β ];
+    use (nat_trans_eq has_homsets_HSET); intro X;
+    use funextsec; intro f;
+    [ set (idax := id_right f);
+      rewrite <- (functor_id exp_II F) in idax;
+      use idax
+    | set (compax := assoc f (# exp_II α) (# exp_II β));
+      rewrite <- (functor_comp exp_II α β) in compax;
+      use compax ].
+Defined.
+
+Definition gen_Fun1 : functor preC preC :=
+  make_functor _ gen_is_functor_Fun1.
+
+Definition gen_Fun2_functor_data : functor_data preC preC.
+Proof.
+  use make_functor_data.
+    - intro F.
+      use functor_composite.
+      + exact preC^op.
+      + use functor_opp.
+        use functor_composite.
+        -- exact preC.
+        -- exact yo.
+        -- exact (constprod_functor1 PreShv_binproduct II).
+      + exact (conv_hom_funct F).
+    - intros F G α.
+      use make_nat_trans.
+      + intros X f.
+        exact (f · α).
+      + intros X Y f.
+        use funextsec; intro g.
+        use assoc'.
+Defined.
+
+Lemma gen_is_functor_Fun2 : is_functor gen_Fun2_functor_data.
+Proof.
+  split;
+    [ intro F | intros F G H α β ];
+    use (nat_trans_eq has_homsets_HSET); intro X;
+    use funextsec; intro f;
+    [ use id_right | use assoc ].
+Defined.
+
+Definition gen_Fun2 : functor preC preC :=
+  make_functor _ gen_is_functor_Fun2.
+
+Definition gen_Fun3_functor_data : functor_data preC preC.
+Proof.
+  use make_functor_data.
+  - intro F.
+    use functor_composite.
+    + exact preC^op.
+    + use functor_opp.
+      use functor_composite.
+      * exact C.
+      * exact (constprod_functor1 PC i).
+      * exact yo.
+    + exact (conv_hom_funct F).
+  - intros F G α.
+    use make_nat_trans.
+    + intros X f.
+      exact (f · α).
+    + intros X Y f.
+      use funextsec; intro g.
+      use assoc'.
+Defined.
+
+Lemma gen_is_functor_Fun3 : is_functor gen_Fun3_functor_data.
+Proof.
+   split;
+    [ intro F | intros F G H α β ];
+    use (nat_trans_eq has_homsets_HSET); intro X;
+    use funextsec; intro f;
+    [ use id_right | use assoc ].
+Defined.
+
+Definition gen_Fun3 : functor preC preC :=
+  make_functor _ gen_is_functor_Fun3.
+
+(* The isomorphisms on the functor level. *)
+
+Lemma gen_first_iso_lv2_nat_trans (F : preC) :
+  is_nat_trans (pr1 (gen_Fun1 F)) _ (λ x, gen_first_iso F x).
+Proof.
+  use is_natural_yoneda_iso.
+Qed.
+
+Lemma gen_first_iso_lv1_nat_trans :
+  is_nat_trans gen_Fun1 exp_II
+    (λ F, make_nat_trans (pr1 (gen_Fun1 F)) _ (gen_first_iso F) (gen_first_iso_lv2_nat_trans F)).
+Proof.
+  intros X Y f.
+  apply (nat_trans_eq has_homsets_HSET); intros x.
+  apply funextsec; intros g.
+  apply (nat_trans_eq has_homsets_HSET); intros y.
+  now apply funextsec.
+Qed.
+
+Lemma gen_first_functor_iso : @iso [preC, preC] exp_II gen_Fun1.
+Proof.
+  use iso_inv_from_iso.
+  use iso_from_two_lv_iso.
+  - use gen_first_iso.
+  - use gen_first_iso_lv2_nat_trans.
+  - use gen_first_iso_lv1_nat_trans.
+Defined.
+
+Lemma gen_second_iso_lv2_nat_trans (F : preC) :
+  is_nat_trans (pr1 (gen_Fun1 F)) (pr1 (gen_Fun2 F)) (λ x, gen_second_iso F x).
+Proof.
+  intros X Y f.
+  apply funextsec; intro g.
+  apply (nat_trans_eq has_homsets_HSET); intros ?.
+  apply funextsec; intros ?.
+  apply maponpaths; apply idpath.
+Qed.
+
+Lemma gen_second_iso_lv1_nat_trans :
+  is_nat_trans gen_Fun1 gen_Fun2
+    (λ X, make_nat_trans (pr1 (gen_Fun1 X)) (pr1 (gen_Fun2 X)) (gen_second_iso X) (gen_second_iso_lv2_nat_trans X)).
+Proof.
+  intros X Y f.
+  apply (nat_trans_eq has_homsets_HSET); intros ?.
+  apply funextsec; intros g.
+  apply (nat_trans_eq has_homsets_HSET); intros ?.
+  apply funextsec; intros h.
+  apply (maponpaths (pr1 f x0)).
+  apply (maponpaths (pr1 (pr1 g x0 (pr2 h)) x0)).
+  now apply pathsdirprod; [use id_left|].
+Qed.
+
+Lemma gen_second_functor_iso : @iso [preC, preC] gen_Fun1 gen_Fun2.
+Proof.
+  use iso_from_two_lv_iso.
+  - use gen_second_iso.
+  - use gen_second_iso_lv2_nat_trans.
+  - use gen_second_iso_lv1_nat_trans.
+Defined.
+
+Lemma gen_third_iso_lv2_nat_trans (F : preC) :
+  is_nat_trans (pr1 (gen_Fun2 F)) (pr1 (gen_Fun3 F)) (λ x, gen_third_iso F x).
+Proof.
+  intros X Y f.
+  apply funextsec; intro g.
+  apply (nat_trans_eq has_homsets_HSET); intros x.
+  apply funextsec; intros y.
+  apply (maponpaths (pr1 g x)), pathsdirprod; cbn.
+  unfold yoneda_morphisms_data.
+rewrite <- assoc.
+unfold BinProduct_of_functors_mor.
+
+Check BinProductOfArrowsPr1.
+apply pathsinv0.
+etrans.
+eapply maponpaths.
+apply BinProductOfArrowsPr1.
+simpl.
+
+now rewrite id_right.
+unfold yoneda_morphisms_data, BinProduct_of_functors_mor.
+cbn.
+apply pathsinv0.
+rewrite <- assoc.
+etrans.
+eapply maponpaths.
+apply BinProductOfArrowsPr2.
+apply assoc.
+Qed.
+
+Lemma gen_third_iso_lv1_nat_trans :
+  is_nat_trans gen_Fun2 gen_Fun3
+    (λ X, make_nat_trans (pr1 (gen_Fun2 X)) (pr1 (gen_Fun3 X)) (gen_third_iso X) (gen_third_iso_lv2_nat_trans X)).
+Proof.
+  intros X Y f.
+  apply (nat_trans_eq has_homsets_HSET); intros ?.
+  apply funextsec; intros g.
+  apply (nat_trans_eq has_homsets_HSET); intros ?.
+  apply funextsec; intros h.
+  apply maponpaths; apply idpath.
+Time Qed. (* 0.041s *)
+
+Lemma gen_third_functor_iso : @iso [preC, preC] gen_Fun2 gen_Fun3.
+Proof.
+  use iso_from_two_lv_iso.
+  - use gen_third_iso.
+  - use gen_third_iso_lv2_nat_trans.
+  - use gen_third_iso_lv1_nat_trans.
+Defined.
+
+Lemma gen_fourth_iso_lv2_nat_trans (F : preC) :
+  is_nat_trans (pr1 (gen_Fun3 F)) _ (λ x, gen_fourth_iso F x).
+Proof.
+  intros X Y f.
+  use (is_natural_yoneda_iso _ _ _ _ _ (BinProduct_of_functors_mor _ _ PC _ _ _ _ _)).
+Qed.
+
+Lemma gen_fourth_iso_lv1_nat_trans :
+  is_nat_trans gen_Fun3 gen_precomp_functor
+    (λ X, make_nat_trans (pr1 (gen_Fun3 X)) _ (gen_fourth_iso X) (gen_fourth_iso_lv2_nat_trans X)).
+Proof.
+  intros X Y f.
+  apply (nat_trans_eq has_homsets_HSET); intros ?.
+  apply funextsec; intros g.
+  apply idpath.
+Qed.
+
+Lemma gen_fourth_functor_iso : @iso [preC, preC] gen_Fun3 gen_precomp_functor.
+Proof.
+  use iso_from_two_lv_iso.
+  - use gen_fourth_iso.
+  - use gen_fourth_iso_lv2_nat_trans.
+  - use gen_fourth_iso_lv1_nat_trans.
+Defined.
+
+(* The exponential functor and the precomposition functor are isomorphic. *)
+
+Lemma gen_exp_I_iso_precomp_functor : @iso [preC, preC]  gen_precomp_functor exp_II.
+Proof.
+  use iso_inv_from_iso.
+  use (iso_comp gen_first_functor_iso).
+  use (iso_comp gen_second_functor_iso).
+  use (iso_comp gen_third_functor_iso).
+  use gen_fourth_functor_iso.
+Defined.
+
+(* The exponential functor has a right adjoint, i.e. the unit interval is tiny. *)
+
+Theorem gen_I_is_tiny : is_left_adjoint exp_II.
+Proof.
+  use is_left_adjoint_iso.
+  - exact PreShv_homsets.
+  - exact gen_precomp_functor.
+  - exact gen_exp_I_iso_precomp_functor.
+  - exact gen_precomp_functor_has_right_adjoint.
 Defined.
