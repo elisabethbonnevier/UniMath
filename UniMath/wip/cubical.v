@@ -160,6 +160,83 @@ Definition exp_I : functor cubical_sets cubical_sets := pr1 (cubical_sets_expone
 
 Definition cubical_homsets : has_homsets cubical_sets := homset_property cubical_sets.
 
+Definition yon_comm_w_binprod_nat_trans_data {C : category} (PC : BinProducts C) (X Y : C) :
+  nat_trans_data (pr1 (yoneda C (homset_property C) (BinProductObject C (PC X Y))))
+            (pr1 (BinProductObject [C^op, HSET, has_homsets_HSET]
+                                   (BinProducts_PreShv (yoneda C (homset_property C) X) (yoneda C (homset_property C) Y)))).
+Proof.
+  intros Z f.
+  split; [exact (f · BinProductPr1 _ _) | exact (f · BinProductPr2 _ _)].
+Defined.
+
+Lemma is_nat_trans_yon_comm_w_binprod {C : category} (PC : BinProducts C) (X Y : C) :
+  is_nat_trans _ _ (yon_comm_w_binprod_nat_trans_data PC X Y).
+Proof.
+  intros Z W f.
+  use funextfun; intro g.
+  use dirprodeq.
+  - exact (assoc' (f : C ⟦W, Z⟧) (g : C ⟦Z, BinProductObject C (PC X Y)⟧) (BinProductPr1 C (PC X Y))).
+  - exact (assoc' (f : C ⟦W, Z⟧) (g : C ⟦Z, BinProductObject C (PC X Y)⟧) (BinProductPr2 C (PC X Y))).
+Qed.
+
+Definition yon_comm_w_binprod_nat_trans {C : category} (PC : BinProducts C) (X Y : C) :
+  nat_trans (pr1 (yoneda C (homset_property C) (BinProductObject C (PC X Y))))
+            (pr1 (BinProductObject [C^op, HSET, has_homsets_HSET]
+                                   (BinProducts_PreShv (yoneda C (homset_property C) X) (yoneda C (homset_property C) Y)))) :=
+  make_nat_trans _ _ _ (is_nat_trans_yon_comm_w_binprod PC X Y).
+
+Definition yon_comm_w_binprod_inv_nat_trans_data {C : category} (PC : BinProducts C) (X Y : C) :
+  nat_trans_data (pr1 (BinProductObject [C^op, HSET, has_homsets_HSET]
+                                        (BinProducts_PreShv (yoneda C (homset_property C) X) (yoneda C (homset_property C) Y))))
+                 (pr1 (yoneda C (homset_property C) (BinProductObject C (PC X Y)))).
+Proof.
+  intros Z [f1 f2].
+  exact (BinProductArrow _ (PC X Y) f1 f2).
+Defined.
+
+Lemma is_nat_trans_yon_comm_w_binprod_inv {C : category} (PC : BinProducts C) (X Y : C) :
+  is_nat_trans _ _ (yon_comm_w_binprod_inv_nat_trans_data PC X Y).
+Proof.
+  unfold yon_comm_w_binprod_inv_nat_trans_data.
+  intros Z W f.
+  use funextfun; intros [g1 g2]; cbn.
+  use BinProductArrowsEq.
+  - rewrite (BinProductPr1Commutes _ _ _ _ _ _ _).
+    rewrite <- (assoc _ (BinProductArrow _ _ _ _) (BinProductPr1 _ _)).
+    rewrite (BinProductPr1Commutes _ _ _ _ _ _ _).
+    apply idpath.
+  - rewrite (BinProductPr2Commutes _ _ _ _ _ _ _).
+    rewrite <- (assoc _ (BinProductArrow _ _ _ _) (BinProductPr2 _ _)).
+    rewrite (BinProductPr2Commutes _ _ _ _ _ _ _).
+    apply idpath.
+Qed.
+
+Definition yon_comm_w_binprod_inv_nat_trans {C : category} (PC : BinProducts C) (X Y : C) :
+  nat_trans (pr1 (BinProductObject [C^op, HSET, has_homsets_HSET]
+                 (BinProducts_PreShv (yoneda C (homset_property C) X) (yoneda C (homset_property C) Y))))
+            (pr1 (yoneda C (homset_property C) (BinProductObject C (PC X Y)))) :=
+  make_nat_trans _ _ _ (is_nat_trans_yon_comm_w_binprod_inv PC X Y).
+
+Lemma yon_comm_w_binprod_is_iso {C : category} (PC : BinProducts C) (X Y : C) :
+  @is_iso [C^op, HSET, has_homsets_HSET] _ _ (yon_comm_w_binprod_nat_trans PC X Y).
+Proof.
+  use is_iso_from_is_z_iso.
+  exists (yon_comm_w_binprod_inv_nat_trans PC X Y).
+  (* unfold yon_comm_w_binprod_nat_trans. *)
+  apply tpair.
+  - apply (nat_trans_eq has_homsets_HSET); intro Z.
+    use funextfun; intro f; cbn.
+    unfold yon_comm_w_binprod_nat_trans_data.
+    unfold yon_comm_w_binprod_inv_nat_trans_data.
+    rewrite <- (BinProductArrowEta _ _ _ _ _ _).
+    apply idpath.
+  - use (nat_trans_eq has_homsets_HSET); intro Z.
+    use funextfun; intro f.
+    use dirprodeq; cbn;
+    unfold yon_comm_w_binprod_inv_nat_trans_data;
+    [use BinProductPr1Commutes | use BinProductPr2Commutes].
+Qed.
+
 Lemma yon_comm_w_binprod {C : category} (PC : BinProducts C) :
   ∏ (X Y : C),
   iso (yoneda _ (homset_property _) (BinProductObject _ (PC X Y)))
@@ -167,37 +244,8 @@ Lemma yon_comm_w_binprod {C : category} (PC : BinProducts C) :
 Proof.
   intros X Y.
   use make_iso.
-  - use make_nat_trans.
-    + intros Z f.
-      split.
-      * exact (f · BinProductPr1 _ _).
-      * exact (f · BinProductPr2 _ _).
-    + abstract (intros Z W f;
-                use funextfun; intro g; use dirprodeq;
-                [exact (assoc' (f : C ⟦W, Z⟧) (g : C ⟦Z, BinProductObject C (PC X Y)⟧) (BinProductPr1 C (PC X Y)))
-                |exact (assoc' (f : C ⟦W, Z⟧) (g : C ⟦Z, BinProductObject C (PC X Y)⟧) (BinProductPr2 C (PC X Y)))]).
-  - use is_iso_from_is_z_iso.
-    use make_is_z_isomorphism.
-    + use make_nat_trans.
-      * intros Z [f1 f2].
-        exact (BinProductArrow _ (PC X Y) f1 f2).
-      * abstract (intros Z W f; use funextfun; intros [g1 g2]; cbn;
-                  set (f_g1 := (f : C ⟦W, Z⟧) · (g1 : C ⟦Z, X⟧));
-                  set (f_g2 := (f : C ⟦W, Z⟧) · (g2 : C ⟦Z, Y⟧));
-                  use BinProductArrowsEq;
-                  [rewrite (BinProductPr1Commutes C X Y (PC X Y) W f_g1 f_g2);
-                   rewrite <- (assoc (f : C ⟦W, Z⟧) (BinProductArrow C (PC X Y) g1 g2) (BinProductPr1 C (PC X Y)));
-                   rewrite (BinProductPr1Commutes C X Y (PC X Y) Z g1 g2); apply idpath
-                  |rewrite (BinProductPr2Commutes C X Y (PC X Y) W f_g1 f_g2);
-                   rewrite <- (assoc (f : C ⟦W, Z⟧) (BinProductArrow C (PC X Y) g1 g2) (BinProductPr2 C (PC X Y)));
-                   rewrite (BinProductPr2Commutes C X Y (PC X Y) Z g1 g2); apply idpath]).
-    + abstract (apply tpair;
-                [apply (nat_trans_eq has_homsets_HSET);
-                 intro Z; use funextfun; intro f; cbn;
-                 rewrite <- (BinProductArrowEta C X Y (PC X Y) Z f); apply idpath
-                |use (nat_trans_eq has_homsets_HSET);
-                 intro Z; use funextfun; intro f; use dirprodeq;
-                 [cbn; use BinProductPr1Commutes | cbn; use BinProductPr2Commutes]]).
+  - use yon_comm_w_binprod_nat_trans.
+  - use yon_comm_w_binprod_is_iso.
 Defined.
 
 (* The isomorphisms between sets. *)
@@ -906,27 +954,21 @@ Proof.
   apply funextsec; intro g.
   apply (nat_trans_eq has_homsets_HSET); intros x.
   apply funextsec; intros y.
-  apply (maponpaths (pr1 g x)), pathsdirprod; cbn.
-  unfold yoneda_morphisms_data.
-rewrite <- assoc.
-unfold BinProduct_of_functors_mor.
-
-Check BinProductOfArrowsPr1.
-apply pathsinv0.
-etrans.
-eapply maponpaths.
-apply BinProductOfArrowsPr1.
-simpl.
-
-now rewrite id_right.
-unfold yoneda_morphisms_data, BinProduct_of_functors_mor.
-cbn.
-apply pathsinv0.
-rewrite <- assoc.
-etrans.
-eapply maponpaths.
-apply BinProductOfArrowsPr2.
-apply assoc.
+  apply (maponpaths (pr1 g x)), pathsdirprod; cbn;
+  unfold yoneda_morphisms_data, BinProduct_of_functors_mor; cbn.
+  - rewrite <- assoc.
+    set (foo := BinProductOfArrowsPr1 C (PC i X) (PC i Y) (identity i) f).
+    apply maponpaths.
+    apply pathsinv0.
+    etrans.
+    + apply BinProductOfArrowsPr1.
+    + now rewrite id_right.
+  - apply pathsinv0.
+    rewrite <- assoc.
+    etrans.
+    + eapply maponpaths.
+      apply BinProductOfArrowsPr2.
+    + apply assoc.
 Qed.
 
 Lemma gen_third_iso_lv1_nat_trans :
