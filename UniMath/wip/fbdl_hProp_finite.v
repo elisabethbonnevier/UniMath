@@ -71,15 +71,8 @@ Proof.
       exact (S'notredundant (S,, SinP) SsubS').
 Defined.
 
-Definition binary_union {X : UU} (P Q : ℙ X) : ℙ X.
-Proof.
-  use subtype_union.
-  - exact bool.
-  - intro x.
-    induction x.
-    + exact P.
-    + exact Q.
-Defined.
+Definition binary_union {X : UU} (P Q : ℙ X) : ℙ X :=
+  λ x, P x ∨ Q x.
 
 Notation "P ∪ Q" := (binary_union P Q) (at level 10).
 
