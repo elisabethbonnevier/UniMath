@@ -76,11 +76,90 @@ Definition binary_union {X : UU} (P Q : ℙ X) : ℙ X :=
 
 Notation "P ∪ Q" := (binary_union P Q) (at level 10).
 
+Lemma iscomm_binary_union {X : UU} : iscomm (@binary_union X).
+Proof.
+  intros P Q.
+  apply funextfun; intro x.
+  use hPropUnivalence.
+  + exact (pr1 islogeqcommhdisj).
+  + exact (pr2 islogeqcommhdisj).
+Defined.
+
 Definition fbdl_join {X : UU} : binop ⟨ X ⟩ :=
   λ P Q, remove_redundant_sets ((pr1 P) ∪ (pr1 Q)).
 
-Definition pointwise_union {X : UU} : binop (ℙ (ℙ X)) :=
-  λ P Q S, ∃ (T : P) (T' : Q), (S ≡ (pr1 T) ∪ (pr1 T')).
+Definition pointwise_union {X : UU} (P Q : ℙ (ℙ X)) : (ℙ (ℙ X)) :=
+  λ S, ∃ (T : P) (T' : Q), (S ≡ (pr1 T) ∪ (pr1 T')).
+
+Lemma iscomm_pointwise_union {X : hSet} : iscomm (@pointwise_union X).
+Proof.
+  intros P Q.
+  apply funextfun; intro S.
+  unfold pointwise_union.
+  apply hPropUnivalence;
+    apply hinhfun;
+    intros [T [T' p]];
+    exists T'; exists T;
+    rewrite (iscomm_binary_union (pr1 T') (pr1 T));
+    exact p.
+Defined.
 
 Definition fbdl_meet {X : UU} : binop ⟨ X ⟩ :=
   λ P Q, remove_redundant_sets (pointwise_union (pr1 P) (pr1 Q)).
+
+
+(* Distributive lattices *)
+
+Definition distributive_latticeop {X : hSet} (l : lattice X) := isldistr (Lmax l) (Lmin l).
+
+Definition distributive_lattice (X : hSet) :=
+  ∑ (l : lattice X), distributive_latticeop l.
+
+Definition bounded_distributive_lattice (X : hSet) :=
+  ∑ (l : lattice X) (bot top : X), (bounded_latticeop l bot top) × (distributive_latticeop l).
+
+
+
+(* Free bounded distributive lattice on a set of generators *)
+
+Lemma isassoc_fbdl_meet {X : hSet} : isassoc (@fbdl_meet X).
+Admitted.
+
+Lemma iscomm_fbdl_meet {X : hSet} : iscomm (@fbdl_meet X).
+Proof.
+  intros P Q.
+  unfold fbdl_meet.
+  rewrite iscomm_pointwise_union.
+  apply idpath.
+Defined.
+
+Lemma isassoc_fbdl_join {X : hSet} : isassoc (@fbdl_join X).
+Admitted.
+
+Lemma iscomm_fbdl_join {X : hSet} : iscomm (@fbdl_join X).
+Proof.
+  intros P Q.
+  unfold fbdl_join.
+  rewrite iscomm_binary_union.
+  apply idpath.
+Defined.
+
+Lemma fbdl_absorption_1 {X : hSet} : ∏ x y : fbdl_elements X, fbdl_meet x (fbdl_join x y) = x.
+Admitted.
+
+Lemma fbdl_absorption_2 {X : hSet} : ∏ x y : fbdl_elements X, fbdl_join x (fbdl_meet x y) = x.
+Admitted.
+
+Definition free_bounded_distributive_lattice (X : hSet) : lattice (fbdl_elements X).
+Proof.
+  use mklattice.
+  - exact fbdl_meet.
+  - exact fbdl_join.
+  - repeat split.
+    + apply isassoc_fbdl_meet.
+    + apply iscomm_fbdl_meet.
+    + apply isassoc_fbdl_join.
+    + apply iscomm_fbdl_join.
+    + apply fbdl_absorption_1.
+    + apply fbdl_absorption_2.
+Defined.
