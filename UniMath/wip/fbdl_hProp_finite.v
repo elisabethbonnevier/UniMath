@@ -85,3 +85,9 @@ Notation "P ∪ Q" := (binary_union P Q) (at level 10).
 
 Definition fbdl_join {X : UU} : binop ⟨ X ⟩ :=
   λ P Q, remove_redundant_sets ((pr1 P) ∪ (pr1 Q)).
+
+Definition pointwise_union {X : UU} : binop (ℙ (ℙ X)) :=
+  λ P Q S, ∃ (T : P) (T' : Q), (S ≡ (pr1 T) ∪ (pr1 T')).
+
+Definition fbdl_meet {X : UU} : binop ⟨ X ⟩ :=
+  λ P Q, remove_redundant_sets (pointwise_union (pr1 P) (pr1 Q)).
