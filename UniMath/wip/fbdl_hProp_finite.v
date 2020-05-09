@@ -53,13 +53,13 @@ Proof.
       exact (pr2 (is_fbdl_element P)).
 Defined.
 
-Notation "⟨ X ⟩" := (fbdl_elements X) (at level 10).
+Notation "⟨ X ⟩" := (fbdl_elements X) (at level 9).
 
-Definition remove_redundant_sets {X : UU} (P : ⟨ X ⟩) : ⟨ X ⟩.
+Definition remove_redundant_sets {X : UU} (P : ℙ (ℙ X)) : ⟨ X ⟩.
 Proof.
   use tpair.
   - intro S.
-    exact ((((S ,, tt) : ∑ (_ : ℙ X), htrue) ∈ pr1 P) ∧ (∀ (T : pr1 P), (pr1 T) ⊆ S ⇒ (pr1 T) ≡ S)).
+    exact ((((S ,, tt) : ∑ (_ : ℙ X), htrue) ∈ P) ∧ (∀ (T : P), (pr1 T) ⊆ S ⇒ (pr1 T) ≡ S)).
   - simpl.
     intros S S' SsubS' x.
     split.
@@ -71,8 +71,17 @@ Proof.
       exact (S'notredundant (S,, SinP) SsubS').
 Defined.
 
-Definition remove_to_is_fbdl_element {X : UU} : ∏ P : ⟨ X ⟩, is_fbdl_element (pr1 (remove_redundant_sets P)).
+Definition binary_union {X : UU} (P Q : ℙ X) : ℙ X.
 Proof.
-  intros [P isfbdlel].
-  intros T S.
-Admitted.
+  use subtype_union.
+  - exact bool.
+  - intro x.
+    induction x.
+    + exact P.
+    + exact Q.
+Defined.
+
+Notation "P ∪ Q" := (binary_union P Q) (at level 10).
+
+Definition fbdl_join {X : UU} : binop ⟨ X ⟩ :=
+  λ P Q, remove_redundant_sets ((pr1 P) ∪ (pr1 Q)).
