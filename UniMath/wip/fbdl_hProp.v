@@ -1,5 +1,6 @@
 Require Import UniMath.Algebra.Lattice.
 Require Import UniMath.Combinatorics.StandardFiniteSets.
+Require Import UniMath.Combinatorics.FiniteSets.
 Require Import UniMath.Foundations.Propositions.
 Require Import UniMath.MoreFoundations.Propositions.
 Require Import UniMath.MoreFoundations.Subtypes.
@@ -34,33 +35,35 @@ Notation "'ℙ' X" := (hsubtype X) (at level 10).
 
 (* There is a coercion "carrier" that sends A : hsubtype X to the sigma-type ∑ (x : A) A(x). *)
 
-Definition isirredundant {X : UU} (P : ℙ (ℙ X)) : hProp :=
-  ¬ ∑ T S : P, (pr1 T) ⊆ (pr1 S).
+Definition is_fbdl_element {X : UU} (P : ℙ (ℙ X)) : hProp :=
+  (isfinite P) ∧ (∀ (S : P), isfinite (pr1 S)) ∧ (∀ (T S : P), (pr1 T) ⊆ (pr1 S) ⇒ (pr1 T) ≡ (pr1 S)).
 
 Definition fbdl_elements (X : UU) : hSet.
 Proof.
   use make_hSet.
-  - exact (∑ P : ℙ (ℙ X), isirredundant P).
+  - exact (∑ P : ℙ (ℙ X), is_fbdl_element P).
   - apply isaset_total2.
     + apply isasethsubtype.
     + intro P.
       apply isasetaprop.
-      exact (pr2 (isirredundant P)).
+      exact (pr2 (is_fbdl_element P)).
 Defined.
 
-Definition remove_redundant_sets {X : UU} (P : ℙ (ℙ X)) : ℙ (ℙ X).
+Definition remove_redundant_sets {X : UU} (P : fbdl_elements X) : fbdl_elements X.
 Proof.
-  intro S.
-  exact ((((S ,, tt) : ∑ (_ : ℙ X), htrue) ∈ P) ∧ (¬ ∑ T : P, (pr1 T) ⊆ S)).
-Defined.
+  destruct P as [P [fin [subfin irred]]].
+  use tpair.
+  - intro S.
+    exact ((((S ,, tt) : ∑ (_ : ℙ X), htrue) ∈ P) ∧ (∀ (T : P), (pr1 T) ⊆ S ⇒ (pr1 T) ≡ S)).
+  - simpl.
+Admitted.
 
-Definition remove_to_isirredundant {X : UU} : ∏ P : ℙ (ℙ X), isirredundant (remove_redundant_sets P).
+Definition remove_to_is_fbdl_element {X : UU} : ∏ P : fbdl_elements X, is_fbdl_element (remove_redundant_sets (pr1 P)).
 Proof.
-  intros P [S [T S_subset_of_T]].
-  use (pr22 T).
-  exists (pr1 S ,, pr12 S).
-  exact S_subset_of_T.
-Defined.
+  intro P.
+  split.
+
+Admitted.
 
 
 
@@ -80,7 +83,7 @@ Definition fbdl_join {X : UU} : binop (fbdl_elements X).
 Proof.
   intros P Q.
   exists (remove_redundant_sets ((pr1 P) ∪ (pr1 Q))).
-  apply remove_to_isirredundant.
+  apply remove_to_is_fbdl_element.
 Defined.
 
 
@@ -95,7 +98,7 @@ Definition fbdl_meet {X : UU} : binop (fbdl_elements X).
 Proof.
   intros P Q.
   exists (remove_redundant_sets (pointwise_union (pr1 P) (pr1 Q))).
-  apply remove_to_isirredundant.
+  apply remove_to_is_fbdl_element.
 Defined.
 
 
@@ -142,7 +145,7 @@ Proof.
   - simpl.
     apply maponpaths.
     apply pointwise_union_iscomm.
-  - exact (pr2 (isirredundant (remove_redundant_sets (pointwise_union (pr1 Q) (pr1 P))))).
+  - exact (pr2 (is_fbdl_element (remove_redundant_sets (pointwise_union (pr1 Q) (pr1 P))))).
 Defined.
 
 Lemma isassoc_fbdl_join {X : hSet} : isassoc (@fbdl_join X).

@@ -39,10 +39,103 @@ Definition finsub (X : UU) : UU :=
 Definition remove_redundant_sets {X : UU} (P : ℙ (ℙ X)) : ℙ (ℙ X) :=
   λ S, (((S ,, tt) : ∑ (_ : ℙ X), htrue) ∈ P) ∧ (∀ (T : P), (pr1 T) ⊆ S ⇒ (pr1 T) ≡ S).
 
-(* Two elements are equivalent if they reduce to the same normal form of joins of meets. *)
-Definition fbdl_el {X : UU} : hSet.
+Definition remove_sets_hrel (X : UU) : hrel (finsub X).
 Proof.
-  apply (@setquotinset (finsub X)).
   intros P Q.
   exact (remove_redundant_sets (pr1 P) ≡ remove_redundant_sets (pr1 Q)).
 Defined.
+
+Lemma subtype_equal_refl {X : UU} : ∏ S : ℙ X, S ≡ S.
+Proof.
+  intros S x.
+  split; exact (λ y, y).
+Defined.
+
+Lemma subtype_equal_sym {X : UU} : ∏ S T : ℙ X, S ≡ T → T ≡ S.
+Proof.
+  intros S T p x.
+  split.
+  - exact (pr2 (p x)).
+  - exact (pr1 (p x)).
+Defined.
+
+Lemma subtype_equal_trans {X : UU} : ∏ S T V : ℙ X, S ≡ T → T ≡ V → S ≡ V.
+Proof.
+  intros S T V p q x.
+  unfold subtype_equal in *.
+  split.
+  - exact ((pr1 (q x)) ∘ (pr1 (p x))).
+  - exact ((pr2 (p x)) ∘ (pr2 (q x))).
+Defined.
+
+Lemma remove_sets_eqrel (X : UU) : eqrel (finsub X).
+Proof.
+  use make_eqrel.
+  - exact (remove_sets_hrel X).
+  - split.
+    + split.
+      * intros S T V.
+        apply subtype_equal_trans.
+      * intro S.
+        apply subtype_equal_refl.
+    + intros S T.
+      apply subtype_equal_sym.
+Defined.
+
+(* Two elements are equivalent if they reduce to the same normal form of joins of meets. *)
+Definition fbdl_el (X : UU) : hSet.
+Proof.
+  apply (@setquotinset (finsub X)).
+  exact (remove_sets_eqrel X).
+Defined.
+
+Definition binary_union {X : UU} (P Q : ℙ X) : ℙ X.
+Proof.
+  use subtype_union.
+  - exact bool.
+  - intro x.
+    induction x.
+    + exact P.
+    + exact Q.
+Defined.
+
+Notation "P ∪ Q" := (binary_union P Q) (at level 10).
+
+Lemma finite_union {X : UU} : ∏ S T : ℙ X, isfinite S → isfinite T → isfinite (S ∪ T).
+Proof.
+  intros S T fin_S fin_T.
+  unfold isfinite in *.
+  unfold finstruct in *.
+  unfold nelstruct in *.
+  unfold binary_union.
+  unfold subtype_union.
+  unfold ishinh in *.
+  simpl in *.
+  unfold ishinh_UU in fin_S, fin_T.
+  intros P f.
+Admitted.
+
+
+Lemma pointwise_finite_union {X : UU} {P Q : ℙ (ℙ X)} (finite_elems_P : ∏ S : P, isfinite (pr1 S)) (finite_elems_Q : ∏ T : Q, isfinite (pr1 T)) : ∏ S : P ∪ Q, isfinite (pr1 S).
+Admitted.
+
+(* The join of two elements is the union of the representatives. *)
+
+Definition fbdl_join {X : UU} : (fbdl_el X) → (fbdl_el X) → (fbdl_el X).
+Proof.
+  (* intros P Q. *)
+  use setquotuniv2.
+  - intros P Q.
+    apply (@setquotpr (finsub X) (remove_sets_eqrel X)).
+    exists ((pr1 P) ∪ (pr1 Q)).
+    split.
+    + apply finite_union.
+      * exact (pr12 P).
+      * exact (pr12 Q).
+    + apply pointwise_finite_union.
+      * exact (pr22 P).
+      * exact (pr22 Q).
+  - intros P P' Q Q'.
+    intros P_eq Q_eq.
+    (* use hsubtype_univalence. *)
+Admitted.
