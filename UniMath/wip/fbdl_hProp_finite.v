@@ -119,6 +119,8 @@ Definition fbdl_join {X : UU} : binop ⟨ X ⟩ :=
 Definition pointwise_union {X : UU} (P Q : ℙ (ℙ X)) : (ℙ (ℙ X)) :=
   λ S, ∃ (T : P) (T' : Q), (S ≡ pr1 T ∪ pr1 T').
 
+Notation "P ⊍ Q" := (pointwise_union P Q) (at level 11).
+
 Lemma iscomm_pointwise_union {X : hSet} : iscomm (@pointwise_union X).
 Proof.
   intros P Q.
@@ -132,8 +134,11 @@ Proof.
     exact p.
 Defined.
 
+Lemma isassoc_pointwise_union {X : hSet} : isassoc (@pointwise_union X).
+Admitted.
+
 Definition fbdl_meet {X : UU} : binop ⟨ X ⟩ :=
-  λ P Q, remove_redundant_sets (pointwise_union (pr1 P) (pr1 Q)).
+  λ P Q, remove_redundant_sets (pr1 P ⊍ pr1 Q).
 
 
 (* Distributive lattices *)
@@ -150,8 +155,20 @@ Definition bounded_distributive_lattice (X : hSet) :=
 
 (* Free bounded distributive lattice on a set of generators *)
 
-Lemma isassoc_fbdl_meet {X : hSet} : isassoc (@fbdl_meet X).
+Lemma assoc_meet_lemma {X : UU} (P Q : ℙ (ℙ X)) :  remove_redundant_sets (pr1 (remove_redundant_sets P) ⊍ Q) = remove_redundant_sets (P ⊍ Q).
 Admitted.
+
+Lemma isassoc_fbdl_meet {X : hSet} : isassoc (@fbdl_meet X).
+Proof.
+  intros P Q R.
+  unfold fbdl_meet.
+  rewrite assoc_meet_lemma.
+  rewrite isassoc_pointwise_union.
+  rewrite iscomm_pointwise_union.
+  rewrite <- assoc_meet_lemma.
+  rewrite iscomm_pointwise_union.
+  apply idpath.
+Defined.
 
 Lemma iscomm_fbdl_meet {X : hSet} : iscomm (@fbdl_meet X).
 Proof.
@@ -161,12 +178,20 @@ Proof.
   apply idpath.
 Defined.
 
+Lemma assoc_join_lemma {X : UU} (P Q : ℙ (ℙ X)) : remove_redundant_sets (pr1 (remove_redundant_sets P) ∪ Q) = remove_redundant_sets (P ∪ Q).
+Admitted.
+
 Lemma isassoc_fbdl_join {X : hSet} : isassoc (@fbdl_join X).
 Proof.
   intros P Q R.
   unfold fbdl_join.
-  apply (@pathscomp0 _ _ (remove_redundant_sets ((pr1 P ∪ pr1 Q) ∪ pr1 R)) _).
-Admitted.
+  rewrite assoc_join_lemma.
+  rewrite isassoc_binary_union.
+  rewrite iscomm_binary_union.
+  rewrite <- assoc_join_lemma.
+  rewrite iscomm_binary_union.
+  apply idpath.
+Defined.
 
 Lemma iscomm_fbdl_join {X : hSet} : iscomm (@fbdl_join X).
 Proof.
