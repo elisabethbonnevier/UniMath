@@ -35,12 +35,12 @@ Declare Scope fbdl.
 (* Powerset *)
 Notation "'ℙ' X" := (hsubtype X) (at level 10).
 
-
-
 (* There is a coercion "carrier" that sends A : hsubtype X to the sigma-type ∑ (x : A) A(x). *)
+(* We use the notation |_| to get the underlying type of the carrier of hsubtype. *)
+Notation "| S |" := (pr1 S) (at level 10).
 
 Definition is_fbdl_element {X : UU} (P : ℙ (ℙ X)) : hProp :=
-  (∀ (T S : P), (pr1 T) ⊆ (pr1 S) ⇒ (pr1 T) ≡ (pr1 S)).
+  (∀ (T S : P), |T| ⊆ |S| ⇒ |T| ≡ |S|).
 
 Definition fbdl_elements (X : UU) : hSet.
 Proof.
@@ -59,9 +59,8 @@ Definition remove_redundant_sets {X : UU} (P : ℙ (ℙ X)) : ⟨ X ⟩.
 Proof.
   use tpair.
   - intro S.
-    exact ((((S ,, tt) : ∑ (_ : ℙ X), htrue) ∈ P) ∧ (∀ (T : P), (pr1 T) ⊆ S ⇒ (pr1 T) ≡ S)).
-  - simpl.
-    intros S S' SsubS' x.
+    exact ((((S ,, tt) : ∑ (_ : ℙ X), htrue) ∈ P) ∧ (∀ (T : P), |T| ⊆ S ⇒ |T| ≡ S)).
+  - intros S S' SsubS' x.
     split.
     + exact (SsubS' x).
     + destruct S as [S [SinP Snotredundant]].
@@ -114,10 +113,10 @@ Proof.
 Defined.
 
 Definition fbdl_join {X : UU} : binop ⟨ X ⟩ :=
-  λ P Q, remove_redundant_sets (pr1 P ∪ pr1 Q).
+  λ P Q, remove_redundant_sets (|P| ∪ |Q|).
 
 Definition pointwise_union {X : UU} (P Q : ℙ (ℙ X)) : (ℙ (ℙ X)) :=
-  λ S, ∃ (T : P) (T' : Q), (S ≡ pr1 T ∪ pr1 T').
+  λ S, ∃ (T : P) (T' : Q), (S ≡ |T| ∪ |T'|).
 
 Notation "P ⊍ Q" := (pointwise_union P Q) (at level 11).
 
@@ -130,20 +129,31 @@ Proof.
     apply hinhfun;
     intros [T [T' p]];
     exists T'; exists T;
-    rewrite (iscomm_binary_union (pr1 T') (pr1 T));
+    rewrite (iscomm_binary_union (|T'|) (|T|));
     exact p.
 Defined.
 
 Lemma isassoc_pointwise_union {X : hSet} : isassoc (@pointwise_union X).
+Proof.
+  intros P Q R.
+  apply funextfun; intro S.
+  unfold pointwise_union.
+  use hPropUnivalence.
+  - intro ex.
+    intro A.
+    intro f.
+    set (exA := ex A).
+    assert (g : (∑ (T : ∑ S : ℙ X, ∃ (T : P) (T' : Q), S ≡ |T| ∪ |T'|) (T' : R), S ≡ |T| ∪ |T'|) → A).
 Admitted.
 
 Definition fbdl_meet {X : UU} : binop ⟨ X ⟩ :=
-  λ P Q, remove_redundant_sets (pr1 P ⊍ pr1 Q).
+  λ P Q, remove_redundant_sets (|P| ⊍ |Q|).
 
 
 (* Distributive lattices *)
 
-Definition distributive_latticeop {X : hSet} (l : lattice X) := isldistr (Lmax l) (Lmin l).
+Definition distributive_latticeop {X : hSet} (l : lattice X) :=
+  isldistr (Lmax l) (Lmin l).
 
 Definition distributive_lattice (X : hSet) :=
   ∑ (l : lattice X), distributive_latticeop l.
@@ -155,7 +165,8 @@ Definition bounded_distributive_lattice (X : hSet) :=
 
 (* Free bounded distributive lattice on a set of generators *)
 
-Lemma assoc_meet_lemma {X : UU} (P Q : ℙ (ℙ X)) :  remove_redundant_sets (pr1 (remove_redundant_sets P) ⊍ Q) = remove_redundant_sets (P ⊍ Q).
+Lemma assoc_meet_lemma {X : UU} (P Q : ℙ (ℙ X)) :
+  remove_redundant_sets (|remove_redundant_sets P| ⊍ Q) = remove_redundant_sets (P ⊍ Q).
 Admitted.
 
 Lemma isassoc_fbdl_meet {X : hSet} : isassoc (@fbdl_meet X).
@@ -178,7 +189,8 @@ Proof.
   apply idpath.
 Defined.
 
-Lemma assoc_join_lemma {X : UU} (P Q : ℙ (ℙ X)) : remove_redundant_sets (pr1 (remove_redundant_sets P) ∪ Q) = remove_redundant_sets (P ∪ Q).
+Lemma assoc_join_lemma {X : UU} (P Q : ℙ (ℙ X)) :
+  remove_redundant_sets (|remove_redundant_sets P| ∪ Q) = remove_redundant_sets (P ∪ Q).
 Admitted.
 
 Lemma isassoc_fbdl_join {X : hSet} : isassoc (@fbdl_join X).
@@ -202,9 +214,21 @@ Proof.
 Defined.
 
 Lemma fbdl_absorption_1 {X : hSet} : ∏ x y : fbdl_elements X, fbdl_meet x (fbdl_join x y) = x.
+Proof.
+  intros P Q.
+  unfold fbdl_meet.
+  unfold fbdl_join.
+  rewrite iscomm_pointwise_union.
+  rewrite assoc_meet_lemma.
 Admitted.
 
 Lemma fbdl_absorption_2 {X : hSet} : ∏ x y : fbdl_elements X, fbdl_join x (fbdl_meet x y) = x.
+Proof.
+  intros P Q.
+  unfold fbdl_meet.
+  unfold fbdl_join.
+  rewrite iscomm_binary_union.
+  rewrite assoc_join_lemma.
 Admitted.
 
 Definition free_bounded_distributive_lattice (X : hSet) : lattice (fbdl_elements X).
